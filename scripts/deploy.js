@@ -3,23 +3,30 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const dehub = '0xD3b5134fef18b69e1ddB986338F2F80CD043a1AF';
+  const randomGenerator = '0xD3b5134fef18b69e1ddB986338F2F80CD043a1AF';
+
+  const [deployer] = await ethers.getSigners();
+
+  console.log(
+    "Deploying contracts with the account:",
+    deployer.address
+  );
 
   // We get the contract to deploy
-  const Greeter = await hre.ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  const StandardLottery = await ethers.getContractFactory("StandardLottery");
+  const standardLottery = await StandardLottery.deploy(dehub, randomGenerator);
+  await standardLottery.deployed();
+  
+  const SpecialLottery = await ethers.getContractFactory("SpecialLottery");
+  const specialLottery = await SpecialLottery.deploy(dehub, randomGenerator);
+  await specialLottery.deployed();
 
-  await greeter.deployed();
-
-  console.log("Greeter deployed to:", greeter.address);
+  console.log("StandardLottery deployed to:", standardLottery.address);
+  console.log("SpecialLottery deployed to:", specialLottery.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
