@@ -32,25 +32,41 @@ module.exports = {
       }
     }
   },
-  networks: {
-    localhost: {
-      url: "http://127.0.0.1:8545"
-    },
-    hardhat: {
-    },
-    testnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-      chainId: 97,
-      gasPrice: 20000000000,
-      accounts: {mnemonic: mnemonic}
-    },
-    mainnet: {
-      url: "https://bsc-dataseed.binance.org/",
-      chainId: 56,
-      gasPrice: 20000000000,
-      accounts: {mnemonic: mnemonic}
-    }
-  },
+	networks: {
+		localhost: {
+			url: 'http://127.0.0.1:8545',
+			forking: {
+				url: process.env.MORALIS_BSC_MAINNET_ARCHIVE_URL || '',
+				blockNumber: 10553446,
+			},
+		},
+		testnet: {
+			url: process.env.MORALIS_BSC_TESTNET_ARCHIVE_URL || '',
+			chainId: 97,
+			gasPrice: 20000000000,
+			accounts:
+				process.env.DEPLOYER001_PRIVATE_KEY !== undefined
+					? [process.env.DEPLOYER001_PRIVATE_KEY]
+					: [],
+		},
+		mainnet: {
+			url: process.env.MORALIS_BSC_MAINNET_URL || '',
+			chainId: 56,
+			gasPrice: 20000000000,
+			accounts:
+				process.env.DEPLOYER001_PRIVATE_KEY !== undefined
+					? [process.env.DEPLOYER001_PRIVATE_KEY]
+					: [],
+		},
+		hardhat: {
+			initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
+		},
+		ropsten: {
+			url: process.env.ROPSTEN_URL || '',
+			accounts:
+				process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+		},
+	},
   paths: {
     sources: "./contracts",
     tests: "./test",
