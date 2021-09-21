@@ -199,11 +199,11 @@ describe("SpecialLottery", () => {
 
       await this.specialLottery.pickDeGrandWinners(lotteryId, 9);
 
-      const userInfo = await this.specialLottery.connect(alpha)
+      const deGrandInfo = await this.specialLottery.connect(alpha)
         .viewDeGrandStatusForTicketIds(
           lotteryId
         );
-      expect(userInfo[0].length).to.gte(0); // more than 1 or equal
+      expect(deGrandInfo[0].length).to.gte(0); // more than 1 or equal
     })
   })
 

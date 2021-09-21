@@ -37,6 +37,11 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     uint256 deGrandFinalNumber; // Final number for DeGrand stage, TODO, will be removed on mainnet
   }
 
+  struct DeGrandWinner {
+    address user;
+    uint256 ticketId;
+  }
+
   address public operatorAddress; // Scheduler wallet address
   ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
@@ -60,13 +65,15 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
 
   // <lotteryId, Lottery>
   mapping(uint256 => Lottery) _lotteries;
-  // <lotteryId, <picked ticket id, bool>: used in DeLotto second stage which has more than 100 tickets
+  // <lotteryId, <picked ticket id, bool>: Used in DeLotto second stage which has more than 100 tickets
   mapping(uint256 => mapping(uint256 => bool)) _deLottoWinnerTicketIds;
-  // <lotteryId, <picked ticket id, bool>
+  // <lotteryId, <picked ticket id, bool>>
   mapping(uint256 => mapping(uint256 => bool)) _deGrandWinnerTicketIds;
+  // <lotteryId, DeGrandWinner[]>
+  mapping(uint256 => DeGrandWinner[]) _deGrandWinners;
   // <ticketId, user address>
   mapping(uint256 => address) _tickets;
-  // <ticketId, claimed>
+  // <ticketId, claimed>: Claimed status for DeLotto second stage
   mapping(uint256 => bool) _claimed;
   // <user address, <lotteryId, ticketId[]>>
   mapping(address => mapping(uint256 => uint256[])) _userTicketIdsPerLotteryId;
@@ -233,7 +240,14 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
 
     for (uint256 i = 0; i < _maxNumberDeGrandWinners; i++) {
       uint256 pickNumber = Utils.pickNumberInRandom(finalNumber, i, _maxNumberDeGrandWinners);
-      _deGrandWinnerTicketIds[_lotteryId][pickNumber + _lotteries[_lotteryId].firstTicketId] = true;
+      uint256 ticketId = pickNumber + _lotteries[_lotteryId].firstTicketId;
+      if (!_deGrandWinnerTicketIds[_lotteryId][ticketId]) {
+        _deGrandWinnerTicketIds[_lotteryId][ticketId] = true;
+        _deGrandWinners[_lotteryId].push(DeGrandWinner({
+          user: _tickets[ticketId],
+          ticketId: ticketId
+        }));
+      }
     }
 
     // Update internal statuses for lottery
@@ -477,23 +491,21 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   function viewDeGrandStatusForTicketIds(
     uint256 _lotteryId
   ) external view returns (
-    uint256[] memory, // array of ticket ids
-    bool[] memory // array of picked status
+    address[] memory, // array of ticket owner
+    uint256[] memory // array of ticket id
   ) {
-    uint256 ticketCount = _userTicketIdsPerLotteryId[msg.sender][_lotteryId].length;
+    uint256 ticketCount = _deGrandWinners[_lotteryId].length;
     require(ticketCount <= maxNumberTicketsPerBuyOrClaim, "Too many tickets");
 
-    uint256[] memory lotteryTicketIds = new uint256[](ticketCount);
-    bool[] memory pickedStatuses = new bool[](ticketCount);
+    address[] memory ticketOwners = new address[](ticketCount);
+    uint256[] memory ticketIds = new uint256[](ticketCount);
 
     for (uint256 i = 0; i < ticketCount; i++) {
-      lotteryTicketIds[i] = _userTicketIdsPerLotteryId[msg.sender][_lotteryId][i];
-      if (_deGrandWinnerTicketIds[_lotteryId][lotteryTicketIds[i]]) {
-        pickedStatuses[i] = true;
-      }
+      ticketOwners[i] = _deGrandWinners[_lotteryId][i].user;
+      ticketIds[i] = _deGrandWinners[_lotteryId][i].ticketId;
     }
 
-    return (lotteryTicketIds, pickedStatuses);
+    return (ticketOwners, ticketIds);
   }
 
   /**
