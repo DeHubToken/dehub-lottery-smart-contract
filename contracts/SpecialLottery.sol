@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.4;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -9,17 +10,18 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
+import "./interfaces/ITransferable.sol";
 import "./libraries/Utils.sol";
 
-contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
+contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransferable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   enum Status {
-    Pending,
-    Open,
-    Close,
-    Claimable
+    Pending,    // == 0
+    Open,       // == 1
+    Close,      // == 2
+    Claimable  // == 3
   }
 
   struct Lottery {
@@ -36,21 +38,18 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
   }
 
   address public operatorAddress; // Scheduler wallet address
-  address public deLottoAddress; // Address to StandardLottery
+  ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
   address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
-
-  uint256 public constant MAX_TICKETS_PER_BUYCLAIM = 100;
 
   uint256 public currentLotteryId;
   uint256 public currentTicketId;
 
-  uint256 public maxNumberTicketsPerBuyOrClaim;
+  uint256 public maxNumberTicketsPerBuyOrClaim = 100;
 
-  uint256 public maxPriceTicketInDehub = 50 ether;
-  uint256 public minPriceTicketInDehub = 0.005 ether;
+  uint256 public maxPriceTicketInDehub = 50000;
+  uint256 public minPriceTicketInDehub = 1000;
 
-  uint256 public maxNumberPickWinners;
   uint256 public breakDownDeLottoPot = 7000; // 70%
   uint256 public breakDownTeamWallet = 2000; // 20%
   uint256 public breakDownBurn = 1000; // 10%
@@ -74,6 +73,8 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
 
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
   uint256 public constant MAX_LENGTH_LOTTERY = 6 days + 5 minutes; // 6 days
+
+  uint256 public constant MAX_TICKETS_PER_BUYCLAIM = 100;
   uint256 public constant MAX_DELOTTO_SECOND_TICKETS = 100;
 
   modifier onlyOperator() {
@@ -129,7 +130,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
 
     uint256 deLottoAmount = amountDehubToTransfer.mul(breakDownDeLottoPot).div(10000);
     uint256 teamAmount = amountDehubToTransfer.mul(breakDownTeamWallet).div(10000);
-    dehubToken.safeTransferFrom(address(msg.sender), deLottoAddress, deLottoAmount);
+    dehubToken.safeTransferFrom(address(msg.sender), address(deLottoAddress), deLottoAmount);
     dehubToken.safeTransferFrom(address(msg.sender), teamWallet, teamAmount);
     dehubToken.safeTransferFrom(address(msg.sender), deadAddress,
       amountDehubToTransfer.sub(deLottoAmount).sub(teamAmount));
@@ -183,7 +184,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
     }
 
     // Transfer money to msg.sender
-    dehubToken.safeTransfer(msg.sender, rewardInDehubToTransfer);
+    deLottoAddress.transferTo(msg.sender, rewardInDehubToTransfer);
 
     emit TicketsClaim(msg.sender, rewardInDehubToTransfer, _lotteryId, _ticketIds.length);
   }
@@ -195,8 +196,11 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
    */
   function closeLottery(uint256 _lotteryId) external onlyOperator nonReentrant {
     require(_lotteries[_lotteryId].status == Status.Open, "Lottery not open");
-    require(block.timestamp > _lotteries[_lotteryId].endTime, "Lottery not over");
+    require(block.timestamp >= _lotteries[_lotteryId].endTime, "Lottery not over");
     _lotteries[_lotteryId].firstTicketIdNextLottery = currentTicketId;
+
+    // Request a random number from the generator based on a seed
+    randomGenerator.getRandomNumber();
 
     _lotteries[_lotteryId].status = Status.Close;
 
@@ -206,18 +210,18 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
   /**
    * @notice Picks the number of winners by the DeHub team. Only used for the DeGrand lottery
    * @param _lotteryId lottery id
-   * @param _maxNumberPickWinners maximum number of picking winners
+   * @param _maxNumberDeGrandWinners maximum number of picking winners
    * @dev Callable by operator
    */
   function pickDeGrandWinners(
     uint256 _lotteryId,
-    uint256 _maxNumberPickWinners
+    uint256 _maxNumberDeGrandWinners
   ) external onlyOwner nonReentrant {
     require(_lotteries[_lotteryId].status == Status.Close, "Lottery not closed");
     require(_lotteryId == randomGenerator.viewLatestId(address(this)), "Numbers not drawn");
-    require(_maxNumberPickWinners < 128, "Maximum limit of winners is 128");
+    require(_maxNumberDeGrandWinners < 128, "Maximum limit of winners is 128");
     require(
-      _maxNumberPickWinners < _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId,
+      _maxNumberDeGrandWinners <= _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId,
       "Exceed to limit of special tickets count"
     );
 
@@ -225,15 +229,15 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
     randomGenerator.getRandomNumber();
 
     // Calculate the finalNumber based on the randomResult generated by ChainLink's fallback
-    uint256 finalNumber = randomGenerator.viewRandomResult(address(this));
+    uint256 finalNumber = randomGenerator.viewRandomResult256(address(this));
 
-    for (uint256 i = 0; i < _maxNumberPickWinners; i++) {
-      uint256 pickNumber = Utils.pickNumberInRandom(finalNumber, i, _maxNumberPickWinners);
+    for (uint256 i = 0; i < _maxNumberDeGrandWinners; i++) {
+      uint256 pickNumber = Utils.pickNumberInRandom(finalNumber, i, _maxNumberDeGrandWinners);
       _deGrandWinnerTicketIds[_lotteryId][pickNumber + _lotteries[_lotteryId].firstTicketId] = true;
     }
 
     // Update internal statuses for lottery
-    _lotteries[_lotteryId].deGrandMaximumWinners = _maxNumberPickWinners;
+    _lotteries[_lotteryId].deGrandMaximumWinners = _maxNumberDeGrandWinners;
     _lotteries[_lotteryId].deGrandFinalNumber = finalNumber; // TODO, will be removed on mainnet
     _lotteries[_lotteryId].status = Status.Claimable;
   }
@@ -250,6 +254,8 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
       "Lottery not closed"
     );
     require(_lotteryId == randomGenerator.viewLatestId(address(this)), "Numbers not drawn");
+      
+    _lotteries[_lotteryId].status = Status.Claimable;
 
     uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
     if (ticketCount < MAX_DELOTTO_SECOND_TICKETS) {
@@ -270,7 +276,6 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
 
     // Update internal statuses for lottery
     _lotteries[_lotteryId].deLottoFinalNumber = finalNumber; // TODO, will be removed on mainnet
-    _lotteries[_lotteryId].status = Status.Claimable;
   }
 
   /**
@@ -329,7 +334,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
   function transferTo(
     address _addr,
     uint256 _amount
-  ) external onlyOwner {
+  ) external override onlyOwner {
     dehubToken.safeTransfer(_addr, _amount);
   }
 
@@ -370,6 +375,15 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer {
    */
   function setOperatorAddress(address _address) external onlyOwner {
     operatorAddress = _address;
+  }
+
+  /**
+   * @notice Set DeLotto address
+   * @param _address DeLotto address
+   * @dev Callable by owner
+   */
+  function setDeLottoAddress(ITransferable _address) external onlyOwner {
+    deLottoAddress = _address;
   }
 
   /**
