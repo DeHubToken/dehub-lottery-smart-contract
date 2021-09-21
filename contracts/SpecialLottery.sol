@@ -60,9 +60,9 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
 
   // <lotteryId, Lottery>
   mapping(uint256 => Lottery) _lotteries;
-  // <lotteryId, <winner index, bool>
+  // <lotteryId, <picked ticket id, bool>: used in DeLotto second stage which has more than 100 tickets
   mapping(uint256 => mapping(uint256 => bool)) _deLottoWinnerTicketIds;
-  // <lotteryId, <winner index, bool>
+  // <lotteryId, <picked ticket id, bool>
   mapping(uint256 => mapping(uint256 => bool)) _deGrandWinnerTicketIds;
   // <ticketId, user address>
   mapping(uint256 => address) _tickets;

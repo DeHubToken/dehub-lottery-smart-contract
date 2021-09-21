@@ -12,6 +12,7 @@ async function mergeContract(contractFile) {
 }
 
 async function main() {
-    await mergeContract("./contracts/RandomGenerator.sol");
+    await mergeContract("./contracts/StandardLottery.sol");
+    await mergeContract("./contracts/SpecialLottery.sol");
 }
 main();
