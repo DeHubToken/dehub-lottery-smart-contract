@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "npx hardhat test",
-    "complile": "npx hardhat compile",
+    "compile": "npx hardhat compile",
     "deploy": "npx hardhat run scripts/deploy.js --network testnet"
   },
   "devDependencies": {
