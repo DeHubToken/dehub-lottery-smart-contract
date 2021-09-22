@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "npx hardhat test",
-    "compile": "npx hardhat compile",
+    "compile": "npx hardhat compile --force",
     "deploy": "npx hardhat run scripts/deploy.js --network testnet",
     "fork:testnet": "npx hardhat node --fork $(dotenv -p MORALIS_BSC_TESTNET_ARCHIVE_URL) --fork-block-number 12585457",
     "fork:mainnet": "npx hardhat node --fork $(dotenv -p MORALIS_BSC_MAINNET_ARCHIVE_URL) --fork-block-number 11134446"
