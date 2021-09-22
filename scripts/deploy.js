@@ -3,10 +3,10 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 
 async function main() {
-  const dehub = '0xD3b5134fef18b69e1ddB986338F2F80CD043a1AF';
+  const dehub = '0xFC206f429d55c71cb7294EfF40c6ADb20dC21508';
   const randomGenerator = '0xD3b5134fef18b69e1ddB986338F2F80CD043a1AF';
 
   const [deployer] = await ethers.getSigners();

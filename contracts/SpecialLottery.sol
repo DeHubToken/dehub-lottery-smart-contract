@@ -261,7 +261,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
    * @param _lotteryId lottery id
    * @dev Callable by operator
    */
-  function pickAwardWinners(uint256 _lotteryId) external onlyOwner nonReentrant {
+  function pickAwardWinners(uint256 _lotteryId) external onlyOperator nonReentrant {
     require(
       _lotteries[_lotteryId].status == Status.Close ||
       _lotteries[_lotteryId].status == Status.Claimable,

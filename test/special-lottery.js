@@ -180,7 +180,7 @@ describe("SpecialLottery", () => {
       const alphaInitBalance = await this.dehubToken.balanceOf(alpha.address);
       const unwonPot = await this.dehubToken.balanceOf(this.standardLottery.address);
 
-      await this.specialLottery.pickAwardWinners(lotteryId);
+      await this.specialLottery.connect(operator).pickAwardWinners(lotteryId);
 
       const userInfo = await this.specialLottery.connect(alpha).viewUserInfoForLotteryId(
         alpha.address,
