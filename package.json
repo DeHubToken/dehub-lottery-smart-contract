@@ -4,7 +4,9 @@
   "scripts": {
     "test": "npx hardhat test",
     "compile": "npx hardhat compile",
-    "deploy": "npx hardhat run scripts/deploy.js --network testnet"
+    "deploy": "npx hardhat run scripts/deploy.js --network testnet",
+    "fork:testnet": "npx hardhat node --fork $(dotenv -p MORALIS_BSC_TESTNET_ARCHIVE_URL) --fork-block-number 12585457",
+    "fork:mainnet": "npx hardhat node --fork $(dotenv -p MORALIS_BSC_MAINNET_ARCHIVE_URL) --fork-block-number 11134446"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
