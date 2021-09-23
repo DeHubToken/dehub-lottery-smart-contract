@@ -1,8 +1,6 @@
-const { accessListify } = require("@ethersproject/transactions");
-const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { now, increaseTime, setBlockTime, generateTicketNumbers } = require("./utils/common");
+const { now, increaseTime, setBlockTime } = require("./utils/common");
 
 describe("SpecialLottery", () => {
 
