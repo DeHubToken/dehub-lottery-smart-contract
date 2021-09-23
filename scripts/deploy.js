@@ -5,14 +5,24 @@
 // Runtime Environment's members available in the global scope.
 const { ethers, network, run } = require("hardhat");
 
+
+
 const addresses = {
   mainnet: {
     dehub: "0xFC206f429d55c71cb7294EfF40c6ADb20dC21508",
     randomGenerator: ""
   },
   testnet: {
-    dehub: "0xFC206f429d55c71cb7294EfF40c6ADb20dC21508",
+    dehub: "0x5A5e32fE118E7c7b6536d143F446269123c0ba74",
     randomGenerator: "0xB92D99cfDb06Fef8F9C528C06a065012Fd44686D"
+  }
+}
+
+const chainLinkAddress = {
+  testnet: {
+    vrfCoordinator: "0xa555fC018435bef5A13C6c6870a9d4C11DEC329C",
+    link: "0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06",
+    keyHash: "0xcaf3c3727e033261d383b315559476f48034c13b18f8cafed4d871abe5049186"
   }
 }
 
@@ -37,36 +47,54 @@ async function main() {
 
   if (network.name === "testnet" || network.name === "mainnet") {
     // We get the contract to deploy
+    const RandomNumberGenerator = await ethers.getContractFactory("RandomNumberGenerator");
+    const randomNumberGenerator = await RandomNumberGenerator.connect(deployer).deploy(
+      chainLinkAddress[network.name].vrfCoordinator,
+      chainLinkAddress[network.name].link
+    );
+    await randomNumberGenerator.deployed();
+    randomNumberGenerator.connect(deployer).setKeyHash(
+      chainLinkAddress[network.name].keyHash
+    );
+
     const StandardLottery = await ethers.getContractFactory("StandardLottery");
     const standardLottery = await StandardLottery.connect(deployer).deploy(
       addresses[network.name].dehub,
-      addresses[network.name].randomGenerator
+      randomNumberGenerator.address, // addresses[network.name].randomGenerator
     );
     await standardLottery.deployed();
     
     const SpecialLottery = await ethers.getContractFactory("SpecialLottery");
     const specialLottery = await SpecialLottery.connect(deployer).deploy(
       addresses[network.name].dehub,
-      addresses[network.name].randomGenerator
+      randomNumberGenerator.address, // addresses[network.name].randomGenerator
     );
     await specialLottery.deployed();
 
+    console.log("RandomNumberGenerator deployed to:", randomNumberGenerator.address);
     console.log("StandardLottery deployed to:", standardLottery.address);
     console.log("SpecialLottery deployed to:", specialLottery.address);
 
     // Verify
     await run("verify:verify", {
+      address: randomNumberGenerator.address,
+      constructorArguments: [
+        chainLinkAddress[network.name].vrfCoordinator,
+        chainLinkAddress[network.name].link
+      ]
+    });
+    await run("verify:verify", {
       address: standardLottery.address,
       constructorArguments: [
         addresses[network.name].dehub,
-        addresses[network.name].randomGenerator
+        randomNumberGenerator.address, // addresses[network.name].randomGenerator
       ]
     });
     await run("verify:verify", {
       address: specialLottery.address,
       constructorArguments: [
         addresses[network.name].dehub,
-        addresses[network.name].randomGenerator
+        randomNumberGenerator.address, // addresses[network.name].randomGenerator
       ]
     });
 
@@ -86,9 +114,9 @@ async function main() {
     await specialLottery.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
     console.log(`Set team wallet of SpecialLottery: ${process.env.TEAM_WALLET}`);
 
-    // Change owner of StandardLottery
-    await standardLottery.connect(deployer).transferOwnership(specialLottery.address);
-    console.log(`Set ownership of StandardLottery: ${specialLottery.address}`);
+    // Change transferer address of StandardLottery
+    await standardLottery.connect(deployer).setTransfererAddress(specialLottery.address);
+    console.log(`Set transferer address of StandardLottery: ${specialLottery.address}`);
 
     // Logging out in table format
     console.table([
