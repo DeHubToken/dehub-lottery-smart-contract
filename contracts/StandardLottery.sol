@@ -49,6 +49,7 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
   }
 
   address public operatorAddress; // Scheduler wallet address
+  address public transfererAddress; // address who can tranfer
   address public deGrandAddress; // address to SpecialLottery
   address public teamWallet;
   address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
@@ -94,6 +95,11 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
     _;
   }
 
+  modifier onlyTransferer() {
+    require(msg.sender == transfererAddress, "Transferer is required");
+    _;
+  }
+
   modifier notContract() {
     require(!_isContract(msg.sender), "Contract not allowed");
     require(msg.sender == tx.origin, "Proxy contract not allowed");
@@ -118,6 +124,8 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
   ) {
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;
+
+    transfererAddress = msg.sender;
 
     // Initializes a mapping
     _bracketCalculator[0] = 11;
@@ -305,10 +313,11 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
       (currentLotteryId == 0) || (_lotteries[currentLotteryId].status == Status.Claimable),
       "Not time to start lottery"
     );
-    require(
-      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
-      "Lottery length outside of range"
-    );
+    // TODO
+    // require(
+    //   ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
+    //   "Lottery length outside of range"
+    // );
     require(
       (_ticketRate >= minPriceTicketInDehub) && (_ticketRate <= maxPriceTicketInDehub),
       "Outside of limits"
@@ -365,7 +374,7 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
   function transferTo(
     address _addr,
     uint256 _amount
-  ) external override onlyOwner {
+  ) external override onlyTransferer {
     dehubToken.safeTransfer(_addr, _amount);
   }
 
@@ -406,6 +415,15 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
    */
   function setOperatorAddress(address _address) external onlyOwner {
     operatorAddress = _address;
+  }
+
+  /**
+   * @notice Set transferer address
+   * @param _address transferer address
+   * @dev Callable by owner
+   */
+  function setTransfererAddress(address _address) external onlyOwner {
+    transfererAddress = _address;
   }
 
   /**

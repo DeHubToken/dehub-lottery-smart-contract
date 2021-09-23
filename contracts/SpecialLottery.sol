@@ -43,6 +43,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   }
 
   address public operatorAddress; // Scheduler wallet address
+  address public transfererAddress; // address who can tranfer
   ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
   address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
@@ -89,6 +90,11 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     _;
   }
 
+  modifier onlyTransferer() {
+    require(msg.sender == transfererAddress, "Transferer is required");
+    _;
+  }
+
   modifier notContract() {
     require(!_isContract(msg.sender), "Contract not allowed");
     require(msg.sender == tx.origin, "Proxy contract not allowed");
@@ -112,6 +118,8 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   ) {
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;
+
+    transfererAddress = msg.sender;
   }
 
   /**
@@ -348,7 +356,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   function transferTo(
     address _addr,
     uint256 _amount
-  ) external override onlyOwner {
+  ) external override onlyTransferer {
     dehubToken.safeTransfer(_addr, _amount);
   }
 
@@ -389,6 +397,15 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
    */
   function setOperatorAddress(address _address) external onlyOwner {
     operatorAddress = _address;
+  }
+
+  /**
+   * @notice Set transferer address
+   * @param _address transferer address
+   * @dev Callable by owner
+   */
+  function setTransfererAddress(address _address) external onlyOwner {
+    transfererAddress = _address;
   }
 
   /**

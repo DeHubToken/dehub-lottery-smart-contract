@@ -53,7 +53,7 @@ describe("SpecialLottery", () => {
       1000  // Burn
     );
     
-    await this.standardLottery.transferOwnership(this.specialLottery.address);
+    await this.standardLottery.setTransfererAddress(this.specialLottery.address);
 
     /// Start Lottery
     lotteryStartTime = await now();
