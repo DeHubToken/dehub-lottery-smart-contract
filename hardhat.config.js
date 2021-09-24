@@ -3,7 +3,10 @@ require("dotenv").config();
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
+require('hardhat-abi-exporter');
 require("solidity-coverage");
+require("@openzeppelin/hardhat-upgrades");
+
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -77,6 +80,13 @@ module.exports = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
+	abiExporter: {
+		path: './data/abi',
+		clear: true,
+		flat: true,
+		only: [],
+		spacing: 2,
+	},
   etherscan: {
     apiKey: process.env.BSCSCAN_API_KEY,
   },

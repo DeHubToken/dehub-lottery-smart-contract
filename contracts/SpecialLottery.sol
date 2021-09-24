@@ -3,17 +3,16 @@
 pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./abstracts/DeHubLotterysUpgradeable.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
 import "./interfaces/ITransferable.sol";
 import "./libraries/Utils.sol";
 
-contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransferable {
+contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransferable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -112,10 +111,12 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   event TicketsPurchase(address indexed buyer, uint256 indexed lotteryId, uint256 numberTickets);
   event TicketsClaim(address indexed claimer, uint256 amount, uint256 indexed lotteryId, uint256 numberTickets);
 
-  constructor(
+  function initialize(
     IERC20 _dehubToken,
     IDeHubRand _randomGenerator
-  ) {
+  ) public initializer {
+    DeHubLotterysUpgradeable.initialize();
+
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;
 

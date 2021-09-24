@@ -3,7 +3,7 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const { ethers, network, run } = require("hardhat");
+const { ethers, network, run, upgrades } = require("hardhat");
 
 
 
@@ -58,18 +58,21 @@ async function main() {
     );
 
     const StandardLottery = await ethers.getContractFactory("StandardLottery");
-    const standardLottery = await StandardLottery.connect(deployer).deploy(
+    const standardUpgrades = await upgrades.deployProxy(StandardLottery, [
       addresses[network.name].dehub,
       randomNumberGenerator.address, // addresses[network.name].randomGenerator
-    );
-    await standardLottery.deployed();
+    ], {
+      kind: 'uups',
+    });
+    await standardUpgrades.deployed();
     
     const SpecialLottery = await ethers.getContractFactory("SpecialLottery");
-    const specialLottery = await SpecialLottery.connect(deployer).deploy(
+    const specialUpgrades = await upgrades.deployProxy(SpecialLottery, [
       addresses[network.name].dehub,
       randomNumberGenerator.address, // addresses[network.name].randomGenerator
-    );
-    await specialLottery.deployed();
+    ], {
+      kind: 'uups',
+    });
 
     console.log("RandomNumberGenerator deployed to:", randomNumberGenerator.address);
     console.log("StandardLottery deployed to:", standardLottery.address);
@@ -83,15 +86,21 @@ async function main() {
         chainLinkAddress[network.name].link
       ]
     });
+    const standardImpl = await upgrades.erc1967.getImplementationAddress(
+      standardUpgrades.address
+    );
     await run("verify:verify", {
-      address: standardLottery.address,
+      address: standardImpl,
       constructorArguments: [
         addresses[network.name].dehub,
         randomNumberGenerator.address, // addresses[network.name].randomGenerator
       ]
     });
+    const specialImpl = await upgrades.erc1967.getImplementationAddress(
+      specialUpgrades.address
+    );
     await run("verify:verify", {
-      address: specialLottery.address,
+      address: specialImpl,
       constructorArguments: [
         addresses[network.name].dehub,
         randomNumberGenerator.address, // addresses[network.name].randomGenerator

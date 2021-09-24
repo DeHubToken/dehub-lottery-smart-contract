@@ -3,16 +3,15 @@
 pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./abstracts/DeHubLotterysUpgradeable.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
 import "./interfaces/ITransferable.sol";
 
-contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransferable {
+contract StandardLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransferable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
@@ -52,20 +51,20 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
   address public transfererAddress; // address who can tranfer
   address public deGrandAddress; // address to SpecialLottery
   address public teamWallet;
-  address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
+  address public constant deadAddress = 0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
   uint256 public currentTicketId;
 
-  uint256 public maxNumberTicketsPerBuyOrClaim = 100;
+  uint256 public maxNumberTicketsPerBuyOrClaim;
 
-  uint256 public maxPriceTicketInDehub = 50000;
-  uint256 public minPriceTicketInDehub = 1000;
+  uint256 public maxPriceTicketInDehub;
+  uint256 public minPriceTicketInDehub;
 
-  uint256 public breakDownDeLottoPot = 5000; // 50%
-  uint256 public breakDownDeGrandPot = 3000; // 30%
-  uint256 public breakDownTeamWallet = 1000; // 10%
-  uint256 public breakDownBurn = 1000; // 10%
+  uint256 public breakDownDeLottoPot;
+  uint256 public breakDownDeGrandPot;
+  uint256 public breakDownTeamWallet;
+  uint256 public breakDownBurn;
 
   IERC20 public dehubToken;
 
@@ -118,14 +117,26 @@ contract StandardLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITrans
   event TicketsPurchase(address indexed buyer, uint256 indexed lotteryId, uint256 numberTickets);
   event TicketsClaim(address indexed claimer, uint256 amount, uint256 indexed lotteryId, uint256 numberTickets);
 
-  constructor(
+  function initialize(
     IERC20 _dehubToken,
     IDeHubRand _randomGenerator
-  ) {
+  ) public initializer {
+    DeHubLotterysUpgradeable.initialize();
+
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;
 
     transfererAddress = msg.sender;
+
+    maxNumberTicketsPerBuyOrClaim = 100;
+
+    maxPriceTicketInDehub = 50000;
+    minPriceTicketInDehub = 1000;
+
+    breakDownDeLottoPot = 5000; // 50%
+    breakDownDeGrandPot = 3000; // 30%
+    breakDownTeamWallet = 1000; // 10%
+    breakDownBurn = 1000; // 10%
 
     // Initializes a mapping
     _bracketCalculator[0] = 11;
