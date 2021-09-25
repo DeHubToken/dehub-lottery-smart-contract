@@ -134,7 +134,7 @@ contract StandardLottery is
     uint256 numberTickets
   );
 
-  function initialize(
+  function __StandardLottery_init(
     IERC20Upgradeable _dehubToken,
     IDeHubRand _randomGenerator
   ) public initializer {

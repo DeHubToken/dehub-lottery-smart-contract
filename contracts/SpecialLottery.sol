@@ -3,24 +3,28 @@
 pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./abstracts/DeHubLotterysUpgradeable.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
 import "./interfaces/ITransferable.sol";
 import "./libraries/Utils.sol";
 
-contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransferable {
-  using SafeMath for uint256;
-  using SafeERC20 for IERC20;
+contract SpecialLottery is
+  DeHubLotterysUpgradeable,
+  IDeHubRandConsumer,
+  ITransferable
+{
+  using SafeMathUpgradeable for uint256;
+  using SafeERC20Upgradeable for IERC20Upgradeable;
 
   enum Status {
-    Pending,    // == 0
-    Open,       // == 1
-    Close,      // == 2
-    Claimable  // == 3
+    Pending, // == 0
+    Open, // == 1
+    Close, // == 2
+    Claimable // == 3
   }
 
   struct Lottery {
@@ -45,7 +49,8 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
   address public transfererAddress; // address who can tranfer
   ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
-  address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
+  address public immutable deadAddress = 
+    0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
   uint256 public currentTicketId;
@@ -59,7 +64,7 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
   uint256 public breakDownTeamWallet = 2000; // 20%
   uint256 public breakDownBurn = 1000; // 10%
 
-  IERC20 public dehubToken;
+  IERC20Upgradeable public dehubToken;
 
   IDeHubRand public randomGenerator;
 
@@ -107,12 +112,24 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
     uint256 priceTicketInDehub,
     uint256 firstTicketId
   );
-  event LotteryClose(uint256 indexed lotteryId, uint256 firstTicketIdNextLottery);
-  event TicketsPurchase(address indexed buyer, uint256 indexed lotteryId, uint256 numberTickets);
-  event TicketsClaim(address indexed claimer, uint256 amount, uint256 indexed lotteryId, uint256 numberTickets);
+  event LotteryClose(
+    uint256 indexed lotteryId,
+    uint256 firstTicketIdNextLottery
+  );
+  event TicketsPurchase(
+    address indexed buyer,
+    uint256 indexed lotteryId,
+    uint256 numberTickets
+  );
+  event TicketsClaim(
+    address indexed claimer,
+    uint256 amount,
+    uint256 indexed lotteryId,
+    uint256 numberTickets
+  );
 
-  function initialize(
-    IERC20 _dehubToken,
+  function __SpecialLottery_init(
+    IERC20Upgradeable _dehubToken,
     IDeHubRand _randomGenerator
   ) public initializer {
     DeHubLotterysUpgradeable.initialize();
@@ -185,8 +202,14 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
     for (uint256 i = 0; i < _ticketIds.length; i++) {
       uint256 thisTicketId = _ticketIds[i];
 
-      require(_lotteries[_lotteryId].firstTicketIdNextLottery > thisTicketId, "TicketId too high");
-      require(_lotteries[_lotteryId].firstTicketId <= thisTicketId, "TicketId too low");
+      require(
+        _lotteries[_lotteryId].firstTicketIdNextLottery > thisTicketId,
+        "TicketId too high"
+      );
+      require(
+        _lotteries[_lotteryId].firstTicketId <= thisTicketId,
+        "TicketId too low"
+      );
       require(msg.sender == _tickets[thisTicketId], "Not the owner");
       if (_claimed[thisTicketId]) {
         continue;
@@ -244,8 +267,13 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
       _lotteries[_lotteryId].status == Status.Claimable,
       "Lottery not closed and claimable"
     );
-    require(_lotteryId == randomGenerator.viewLatestId(address(this)), "Numbers not drawn");
-    require(_maxNumberDeGrandWinners < 128, "Maximum limit of winners is 128");
+    require(
+      _lotteryId == randomGenerator.viewLatestId(address(this)),
+      "Numbers not drawn"
+    );
+    require(
+      _maxNumberDeGrandWinners < 128,
+      "Maximum limit of winners is 128");
     require(
       _maxNumberDeGrandWinners <= _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId,
       "Exceed to limit of special tickets count"
@@ -290,7 +318,8 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
       
     _lotteries[_lotteryId].status = Status.Claimable;
 
-    uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
+    uint256 ticketCount = 
+      _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
     if (ticketCount < MAX_DELOTTO_SECOND_TICKETS) {
       return;
     }
@@ -554,7 +583,8 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
     uint256 // next cursor
   ) {
     uint256 length = _size;
-    uint256 numberTicketsBoughtAtLotteryId = _userTicketIdsPerLotteryId[_user][_lotteryId].length;
+    uint256 numberTicketsBoughtAtLotteryId = 
+      _userTicketIdsPerLotteryId[_user][_lotteryId].length;
 
     if (length > (numberTicketsBoughtAtLotteryId - _cursor)) {
       length = numberTicketsBoughtAtLotteryId - _cursor;
@@ -582,7 +612,8 @@ contract SpecialLottery is DeHubLotterysUpgradeable, IDeHubRandConsumer, ITransf
     uint256 _lotteryId,
     uint256 _ticketId
   ) internal view returns (uint256) {
-    uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
+    uint256 ticketCount = 
+      _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
 
     // DeLotto second stage
     if (ticketCount >= MAX_DELOTTO_SECOND_TICKETS) {

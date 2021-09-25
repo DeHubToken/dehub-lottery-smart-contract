@@ -12,7 +12,12 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 
-abstract contract DeHubLotterysUpgradeable is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
+abstract contract DeHubLotterysUpgradeable is
+	Initializable,
+	OwnableUpgradeable,
+	ReentrancyGuardUpgradeable,
+	UUPSUpgradeable
+{
 	using SafeERC20Upgradeable for IERC20Upgradeable;
 	using AddressUpgradeable for address;
 

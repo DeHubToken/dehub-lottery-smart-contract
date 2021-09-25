@@ -63,6 +63,7 @@ async function main() {
       randomNumberGenerator.address, // addresses[network.name].randomGenerator
     ], {
       kind: 'uups',
+      initializer: '__StandardLottery_init'
     });
     await standardUpgrades.deployed();
     
@@ -71,7 +72,8 @@ async function main() {
       addresses[network.name].dehub,
       randomNumberGenerator.address, // addresses[network.name].randomGenerator
     ], {
-      kind: 'uups',
+      initializer: '__SpecialLottery_init',
+      kind: 'uups'
     });
 
     console.log("RandomNumberGenerator deployed to:", randomNumberGenerator.address);
