@@ -36,14 +36,7 @@ const countTotalGas = async (tx) => {
 };
 
 async function main() {
-  const signers = await ethers.getSigners();
-
-  let deployer;
-  signers.forEach(signer => {
-    if (signer.address === process.env.DEPLOYER001) {
-      deployer = signer;
-    }
-  })
+  const [deployer] = await ethers.getSigners();
   if (!deployer) {
 		throw new Error(`${process.env.DEPLOYER001} not found in signers!`);
   }
@@ -57,12 +50,12 @@ async function main() {
   if (network.name === "testnet" || network.name === "mainnet") {
     // We get the contract to deploy
     const RandomNumberGenerator = await ethers.getContractFactory("RandomNumberGenerator");
-    const randomNumberGenerator = await RandomNumberGenerator.connect(deployer).deploy(
+    const randomNumberGenerator = await RandomNumberGenerator.deploy(
       chainLinkAddress[network.name].vrfCoordinator,
       chainLinkAddress[network.name].link
     );
     await randomNumberGenerator.deployed();
-    randomNumberGenerator.connect(deployer).setKeyHash(
+    randomNumberGenerator.setKeyHash(
       chainLinkAddress[network.name].keyHash
     );
 
@@ -94,7 +87,7 @@ async function main() {
 
     console.log("RandomNumberGenerator deployed to:", randomNumberGenerator.address);
     console.log("StandardLottery deployed to:", standardUpgrades.address);
-    console.log("SpecialLottery deployed to:", specialUpgrades.address);+
+    console.log("SpecialLottery deployed to:", specialUpgrades.address);
     
     // Verify
     await run("verify:verify", {
@@ -120,23 +113,23 @@ async function main() {
     });
 
     // Set configuration on StandardLottery
-    await standardUpgrades.connect(deployer).setOperatorAddress(process.env.OPERATOR_ADDRESS);
+    await standardUpgrades.setOperatorAddress(process.env.OPERATOR_ADDRESS);
     console.log(`Set operator of StandardLottery: ${process.env.OPERATOR_ADDRESS}`);
-    await standardUpgrades.connect(deployer).setDeGrandAddress(standardUpgrades.address);
+    await standardUpgrades.setDeGrandAddress(standardUpgrades.address);
     console.log(`Set DeGrand of StandardLottery: ${specialUpgrades.address}`);
-    await standardUpgrades.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
+    await standardUpgrades.setTeamWallet(process.env.TEAM_WALLET);
     console.log(`Set team wallet of StandardLottery: ${process.env.TEAM_WALLET}`);
 
     // Set configuration on SpecialLottery
-    await specialUpgrades.connect(deployer).setOperatorAddress(process.env.OPERATOR_ADDRESS);
+    await specialUpgrades.setOperatorAddress(process.env.OPERATOR_ADDRESS);
     console.log(`Set operator of SpecialLottery: ${process.env.OPERATOR_ADDRESS}`);
-    await specialUpgrades.connect(deployer).setDeLottoAddress(standardUpgrades.address);
+    await specialUpgrades.setDeLottoAddress(standardUpgrades.address);
     console.log(`Set DeLotto of SpecialLottery: ${standardUpgrades.address}`);
-    await specialUpgrades.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
+    await specialUpgrades.setTeamWallet(process.env.TEAM_WALLET);
     console.log(`Set team wallet of SpecialLottery: ${process.env.TEAM_WALLET}`);
 
     // Change transferer address of StandardLottery
-    await standardUpgrades.connect(deployer).setTransfererAddress(specialUpgrades.address);
+    await standardUpgrades.setTransfererAddress(specialUpgrades.address);
     console.log(`Set transferer address of StandardLottery: ${specialUpgrades.address}`);
 
     // Logging out in table format
