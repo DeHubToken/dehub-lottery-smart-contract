@@ -24,19 +24,28 @@ describe("StandardLottery", () => {
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
-    this.standardLottery = await StandardLottery.deploy();
+    this.standardLottery = await upgrades.deployProxy(
+      StandardLottery,
+      [
+        this.dehubToken.address,
+        this.dehubRandom.address
+      ], {
+        kind: 'uups',
+        initializer: '__StandardLottery_init'
+      }
+    );
     await this.standardLottery.deployed();
-    this.specialLottery = await SpecialLottery.deploy();
+    this.specialLottery = await upgrades.deployProxy(
+      SpecialLottery,
+      [
+        this.dehubToken.address,
+        this.dehubRandom.address
+      ], {
+        kind: 'uups',
+        initializer: '__SpecialLottery_init'
+      }
+    );
     await this.specialLottery.deployed();
-
-    await this.standardLottery.initialize(
-      this.dehubToken.address,
-      this.dehubRandom.address
-    );
-    await this.specialLottery.initialize(
-      this.dehubToken.address,
-      this.dehubRandom.address
-    );
 
     await this.dehubToken.transfer(alpha.address, 1000000);
     await this.dehubToken.transfer(beta.address, 1000000);
