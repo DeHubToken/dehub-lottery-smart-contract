@@ -63,7 +63,7 @@ async function main() {
       randomNumberGenerator.address, // addresses[network.name].randomGenerator
     ], {
       kind: 'uups',
-      initializer: '__StandardLottery_init'
+      initializer: '__StandardLottery_init(address, address)'
     });
     await standardUpgrades.deployed();
     
@@ -72,13 +72,14 @@ async function main() {
       addresses[network.name].dehub,
       randomNumberGenerator.address, // addresses[network.name].randomGenerator
     ], {
-      initializer: '__SpecialLottery_init',
-      kind: 'uups'
+      kind: 'uups',
+      initializer: '__SpecialLottery_init(address, address)'
     });
+    await specialUpgrades.deployed();
 
     console.log("RandomNumberGenerator deployed to:", randomNumberGenerator.address);
-    console.log("StandardLottery deployed to:", standardLottery.address);
-    console.log("SpecialLottery deployed to:", specialLottery.address);
+    console.log("StandardLottery deployed to:", standardUpgrades.address);
+    console.log("SpecialLottery deployed to:", specialUpgrades.address);
 
     // Verify
     await run("verify:verify", {
@@ -92,42 +93,34 @@ async function main() {
       standardUpgrades.address
     );
     await run("verify:verify", {
-      address: standardImpl,
-      constructorArguments: [
-        addresses[network.name].dehub,
-        randomNumberGenerator.address, // addresses[network.name].randomGenerator
-      ]
+      address: standardImpl
     });
     const specialImpl = await upgrades.erc1967.getImplementationAddress(
       specialUpgrades.address
     );
     await run("verify:verify", {
-      address: specialImpl,
-      constructorArguments: [
-        addresses[network.name].dehub,
-        randomNumberGenerator.address, // addresses[network.name].randomGenerator
-      ]
+      address: specialImpl
     });
 
     // Set configuration on StandardLottery
-    await standardLottery.connect(deployer).setOperatorAddress(process.env.OPERATOR_ADDRESS);
+    await standardUpgrades.connect(deployer).setOperatorAddress(process.env.OPERATOR_ADDRESS);
     console.log(`Set operator of StandardLottery: ${process.env.OPERATOR_ADDRESS}`);
-    await standardLottery.connect(deployer).setDeGrandAddress(specialLottery.address);
+    await standardUpgrades.connect(deployer).setDeGrandAddress(specialLottery.address);
     console.log(`Set DeGrand of StandardLottery: ${specialLottery.address}`);
-    await standardLottery.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
+    await standardUpgrades.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
     console.log(`Set team wallet of StandardLottery: ${process.env.TEAM_WALLET}`);
 
     // Set configuration on SpecialLottery
-    await specialLottery.connect(deployer).setOperatorAddress(process.env.OPERATOR_ADDRESS);
+    await specialUpgrades.connect(deployer).setOperatorAddress(process.env.OPERATOR_ADDRESS);
     console.log(`Set operator of SpecialLottery: ${process.env.OPERATOR_ADDRESS}`);
-    await specialLottery.connect(deployer).setDeLottoAddress(standardLottery.address);
-    console.log(`Set DeLotto of SpecialLottery: ${standardLottery.address}`);
-    await specialLottery.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
+    await specialUpgrades.connect(deployer).setDeLottoAddress(standardUpgrades.address);
+    console.log(`Set DeLotto of SpecialLottery: ${standardUpgrades.address}`);
+    await specialUpgrades.connect(deployer).setTeamWallet(process.env.TEAM_WALLET);
     console.log(`Set team wallet of SpecialLottery: ${process.env.TEAM_WALLET}`);
 
     // Change transferer address of StandardLottery
-    await standardLottery.connect(deployer).setTransfererAddress(specialLottery.address);
-    console.log(`Set transferer address of StandardLottery: ${specialLottery.address}`);
+    await standardUpgrades.connect(deployer).setTransfererAddress(specialUpgrades.address);
+    console.log(`Set transferer address of StandardLottery: ${specialUpgrades.address}`);
 
     // Logging out in table format
     console.table([
@@ -141,11 +134,11 @@ async function main() {
       },
       {
         Label: 'StandardLottery',
-        Info: standardLottery.address
+        Info: standardUpgrades.address
       },
       {
         Label: 'SpecialLottery',
-        Info: specialLottery.address
+        Info: specialUpgrades.address
       }
     ])
   }

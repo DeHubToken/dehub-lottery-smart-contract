@@ -49,20 +49,20 @@ contract SpecialLottery is
   address public transfererAddress; // address who can tranfer
   ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
-  address public immutable deadAddress = 
+  address public constant deadAddress = 
     0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
   uint256 public currentTicketId;
 
-  uint256 public maxNumberTicketsPerBuyOrClaim = 100;
+  uint256 public maxNumberTicketsPerBuyOrClaim;
 
-  uint256 public maxPriceTicketInDehub = 50000;
-  uint256 public minPriceTicketInDehub = 1000;
+  uint256 public maxPriceTicketInDehub;
+  uint256 public minPriceTicketInDehub;
 
-  uint256 public breakDownDeLottoPot = 7000; // 70%
-  uint256 public breakDownTeamWallet = 2000; // 20%
-  uint256 public breakDownBurn = 1000; // 10%
+  uint256 public breakDownDeLottoPot;
+  uint256 public breakDownTeamWallet;
+  uint256 public breakDownBurn;
 
   IERC20Upgradeable public dehubToken;
 
@@ -138,6 +138,15 @@ contract SpecialLottery is
     randomGenerator = _randomGenerator;
 
     transfererAddress = msg.sender;
+
+    maxNumberTicketsPerBuyOrClaim = 100;
+
+    maxPriceTicketInDehub = 50000;
+    minPriceTicketInDehub = 1000;
+
+    breakDownDeLottoPot = 7000; // 70%
+    breakDownTeamWallet = 2000; // 20%
+    breakDownBurn = 1000; // 10%
   }
 
   /**
