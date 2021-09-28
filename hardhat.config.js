@@ -3,9 +3,10 @@ require("dotenv").config();
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
+require('hardhat-abi-exporter');
 require("solidity-coverage");
+require("@openzeppelin/hardhat-upgrades");
 
-const { mnemonic } = require('./secrets.json');
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -35,18 +36,18 @@ module.exports = {
 	networks: {
 		localhost: {
 			url: 'http://127.0.0.1:8545',
-			forking: {
-				url: process.env.MORALIS_BSC_MAINNET_ARCHIVE_URL || '',
-				blockNumber: 10553446,
-			},
+			accounts:
+				process.env.MNEMONIC !== undefined
+					? {mnemonic: process.env.MNEMONIC}
+					: [],
 		},
 		testnet: {
 			url: process.env.MORALIS_BSC_TESTNET_ARCHIVE_URL || '',
 			chainId: 97,
 			gasPrice: 20000000000,
 			accounts:
-				process.env.DEPLOYER001_PRIVATE_KEY !== undefined
-					? [process.env.DEPLOYER001_PRIVATE_KEY]
+				process.env.MNEMONIC !== undefined
+					? {mnemonic: process.env.MNEMONIC}
 					: [],
 		},
 		mainnet: {
@@ -54,8 +55,8 @@ module.exports = {
 			chainId: 56,
 			gasPrice: 20000000000,
 			accounts:
-				process.env.DEPLOYER001_PRIVATE_KEY !== undefined
-					? [process.env.DEPLOYER001_PRIVATE_KEY]
+				process.env.MNEMONIC !== undefined
+					? {mnemonic: process.env.MNEMONIC}
 					: [],
 		},
 		hardhat: {
@@ -64,7 +65,9 @@ module.exports = {
 		ropsten: {
 			url: process.env.ROPSTEN_URL || '',
 			accounts:
-				process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+				process.env.MNEMONIC !== undefined
+					? {mnemonic: process.env.MNEMONIC}
+					: [],
 		},
 	},
   paths: {
@@ -77,7 +80,17 @@ module.exports = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
+	abiExporter: {
+		path: './data/abi',
+		clear: true,
+		flat: true,
+		only: [],
+		spacing: 2,
+	},
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: process.env.BSCSCAN_API_KEY,
   },
+  mocha: {
+    timeout: 2000000
+  }
 };

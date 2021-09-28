@@ -1,8 +1,6 @@
-const { accessListify } = require("@ethersproject/transactions");
-const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { now, increaseTime, setBlockTime, generateTicketNumbers } = require("./utils/common");
+const { ethers, upgrades } = require("hardhat");
+const { now, increaseTime, setBlockTime } = require("./utils/common");
 
 describe("SpecialLottery", () => {
 
@@ -26,14 +24,26 @@ describe("SpecialLottery", () => {
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
-    this.standardLottery = await StandardLottery.deploy(
-      this.dehubToken.address,
-      this.dehubRandom.address
+    this.standardLottery = await upgrades.deployProxy(
+      StandardLottery,
+      [
+        this.dehubToken.address,
+        this.dehubRandom.address
+      ], {
+        kind: 'uups',
+        initializer: '__StandardLottery_init'
+      }
     );
     await this.standardLottery.deployed();
-    this.specialLottery = await SpecialLottery.deploy(
-      this.dehubToken.address,
-      this.dehubRandom.address
+    this.specialLottery = await upgrades.deployProxy(
+      SpecialLottery,
+      [
+        this.dehubToken.address,
+        this.dehubRandom.address
+      ], {
+        kind: 'uups',
+        initializer: '__SpecialLottery_init'
+      }
     );
     await this.specialLottery.deployed();
 
@@ -55,7 +65,7 @@ describe("SpecialLottery", () => {
       1000  // Burn
     );
     
-    await this.standardLottery.transferOwnership(this.specialLottery.address);
+    await this.standardLottery.setTransfererAddress(this.specialLottery.address);
 
     /// Start Lottery
     lotteryStartTime = await now();
@@ -180,7 +190,7 @@ describe("SpecialLottery", () => {
       const alphaInitBalance = await this.dehubToken.balanceOf(alpha.address);
       const unwonPot = await this.dehubToken.balanceOf(this.standardLottery.address);
 
-      await this.specialLottery.pickAwardWinners(lotteryId);
+      await this.specialLottery.connect(operator).pickAwardWinners(lotteryId);
 
       const userInfo = await this.specialLottery.connect(alpha).viewUserInfoForLotteryId(
         alpha.address,

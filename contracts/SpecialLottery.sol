@@ -3,25 +3,28 @@
 pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "./abstracts/DeHubLotterysUpgradeable.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
 import "./interfaces/ITransferable.sol";
 import "./libraries/Utils.sol";
 
-contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransferable {
-  using SafeMath for uint256;
-  using SafeERC20 for IERC20;
+contract SpecialLottery is
+  DeHubLotterysUpgradeable,
+  IDeHubRandConsumer,
+  ITransferable
+{
+  using SafeMathUpgradeable for uint256;
+  using SafeERC20Upgradeable for IERC20Upgradeable;
 
   enum Status {
-    Pending,    // == 0
-    Open,       // == 1
-    Close,      // == 2
-    Claimable  // == 3
+    Pending, // == 0
+    Open, // == 1
+    Close, // == 2
+    Claimable // == 3
   }
 
   struct Lottery {
@@ -43,23 +46,25 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   }
 
   address public operatorAddress; // Scheduler wallet address
+  address public transfererAddress; // address who can tranfer
   ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
-  address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
+  address public constant deadAddress = 
+    0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
   uint256 public currentTicketId;
 
-  uint256 public maxNumberTicketsPerBuyOrClaim = 100;
+  uint256 public maxNumberTicketsPerBuyOrClaim;
 
-  uint256 public maxPriceTicketInDehub = 50000;
-  uint256 public minPriceTicketInDehub = 1000;
+  uint256 public maxPriceTicketInDehub;
+  uint256 public minPriceTicketInDehub;
 
-  uint256 public breakDownDeLottoPot = 7000; // 70%
-  uint256 public breakDownTeamWallet = 2000; // 20%
-  uint256 public breakDownBurn = 1000; // 10%
+  uint256 public breakDownDeLottoPot;
+  uint256 public breakDownTeamWallet;
+  uint256 public breakDownBurn;
 
-  IERC20 public dehubToken;
+  IERC20Upgradeable public dehubToken;
 
   IDeHubRand public randomGenerator;
 
@@ -89,6 +94,11 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     _;
   }
 
+  modifier onlyTransferer() {
+    require(msg.sender == transfererAddress, "Transferer is required");
+    _;
+  }
+
   modifier notContract() {
     require(!_isContract(msg.sender), "Contract not allowed");
     require(msg.sender == tx.origin, "Proxy contract not allowed");
@@ -102,16 +112,41 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     uint256 priceTicketInDehub,
     uint256 firstTicketId
   );
-  event LotteryClose(uint256 indexed lotteryId, uint256 firstTicketIdNextLottery);
-  event TicketsPurchase(address indexed buyer, uint256 indexed lotteryId, uint256 numberTickets);
-  event TicketsClaim(address indexed claimer, uint256 amount, uint256 indexed lotteryId, uint256 numberTickets);
+  event LotteryClose(
+    uint256 indexed lotteryId,
+    uint256 firstTicketIdNextLottery
+  );
+  event TicketsPurchase(
+    address indexed buyer,
+    uint256 indexed lotteryId,
+    uint256 numberTickets
+  );
+  event TicketsClaim(
+    address indexed claimer,
+    uint256 amount,
+    uint256 indexed lotteryId,
+    uint256 numberTickets
+  );
 
-  constructor(
-    IERC20 _dehubToken,
+  function __SpecialLottery_init(
+    IERC20Upgradeable _dehubToken,
     IDeHubRand _randomGenerator
-  ) {
+  ) public initializer {
+    DeHubLotterysUpgradeable.initialize();
+
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;
+
+    transfererAddress = msg.sender;
+
+    maxNumberTicketsPerBuyOrClaim = 100;
+
+    maxPriceTicketInDehub = 50000;
+    minPriceTicketInDehub = 1000;
+
+    breakDownDeLottoPot = 7000; // 70%
+    breakDownTeamWallet = 2000; // 20%
+    breakDownBurn = 1000; // 10%
   }
 
   /**
@@ -176,18 +211,30 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     for (uint256 i = 0; i < _ticketIds.length; i++) {
       uint256 thisTicketId = _ticketIds[i];
 
-      require(_lotteries[_lotteryId].firstTicketIdNextLottery > thisTicketId, "TicketId too high");
-      require(_lotteries[_lotteryId].firstTicketId <= thisTicketId, "TicketId too low");
+      require(
+        _lotteries[_lotteryId].firstTicketIdNextLottery > thisTicketId,
+        "TicketId too high"
+      );
+      require(
+        _lotteries[_lotteryId].firstTicketId <= thisTicketId,
+        "TicketId too low"
+      );
       require(msg.sender == _tickets[thisTicketId], "Not the owner");
+      if (_claimed[thisTicketId]) {
+        continue;
+      }
 
       // Calculate reward of DeLotto second stage
       uint256 rewardForTicketId =_calculateRewardsForTicketId(_lotteryId, thisTicketId);
 
-      // Update the lottery ticket owner to 0x address
-      _tickets[thisTicketId] = address(0);
+      _claimed[thisTicketId] = true;
 
       // Increment the reward to transfer
       rewardInDehubToTransfer += rewardForTicketId;
+    }
+
+    if (rewardInDehubToTransfer < 1) { // nothing to claim
+      return;
     }
 
     // Transfer money to msg.sender
@@ -224,9 +271,18 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     uint256 _lotteryId,
     uint256 _maxNumberDeGrandWinners
   ) external onlyOwner nonReentrant {
-    require(_lotteries[_lotteryId].status == Status.Close, "Lottery not closed");
-    require(_lotteryId == randomGenerator.viewLatestId(address(this)), "Numbers not drawn");
-    require(_maxNumberDeGrandWinners < 128, "Maximum limit of winners is 128");
+    require(
+      _lotteries[_lotteryId].status == Status.Close ||
+      _lotteries[_lotteryId].status == Status.Claimable,
+      "Lottery not closed and claimable"
+    );
+    require(
+      _lotteryId == randomGenerator.viewLatestId(address(this)),
+      "Numbers not drawn"
+    );
+    require(
+      _maxNumberDeGrandWinners < 128,
+      "Maximum limit of winners is 128");
     require(
       _maxNumberDeGrandWinners <= _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId,
       "Exceed to limit of special tickets count"
@@ -261,7 +317,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
    * @param _lotteryId lottery id
    * @dev Callable by operator
    */
-  function pickAwardWinners(uint256 _lotteryId) external onlyOwner nonReentrant {
+  function pickAwardWinners(uint256 _lotteryId) external onlyOperator nonReentrant {
     require(
       _lotteries[_lotteryId].status == Status.Close ||
       _lotteries[_lotteryId].status == Status.Claimable,
@@ -271,7 +327,8 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
       
     _lotteries[_lotteryId].status = Status.Claimable;
 
-    uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
+    uint256 ticketCount = 
+      _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
     if (ticketCount < MAX_DELOTTO_SECOND_TICKETS) {
       return;
     }
@@ -280,7 +337,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     randomGenerator.getRandomNumber();
 
     // Calculate the finalNumber based on the randomResult generated by ChainLink's fallback
-    uint256 finalNumber = randomGenerator.viewRandomResult(address(this));
+    uint256 finalNumber = randomGenerator.viewRandomResult256(address(this));
 
     // If bought over 100 tickets, pick randomly 100 tickets
     for (uint256 i = 0; i < MAX_DELOTTO_SECOND_TICKETS; i++) {
@@ -348,7 +405,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
   function transferTo(
     address _addr,
     uint256 _amount
-  ) external override onlyOwner {
+  ) external override onlyTransferer {
     dehubToken.safeTransfer(_addr, _amount);
   }
 
@@ -389,6 +446,15 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
    */
   function setOperatorAddress(address _address) external onlyOwner {
     operatorAddress = _address;
+  }
+
+  /**
+   * @notice Set transferer address
+   * @param _address transferer address
+   * @dev Callable by owner
+   */
+  function setTransfererAddress(address _address) external onlyOwner {
+    transfererAddress = _address;
   }
 
   /**
@@ -471,7 +537,7 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
 
     uint256 rewards;
     for (uint256 i = 0; i < _ticketIds.length; i++) {
-      if (_tickets[_ticketIds[i]] == address(0)) {
+      if (_claimed[_ticketIds[i]]) {
         continue;
       }
 
@@ -526,7 +592,8 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     uint256 // next cursor
   ) {
     uint256 length = _size;
-    uint256 numberTicketsBoughtAtLotteryId = _userTicketIdsPerLotteryId[_user][_lotteryId].length;
+    uint256 numberTicketsBoughtAtLotteryId = 
+      _userTicketIdsPerLotteryId[_user][_lotteryId].length;
 
     if (length > (numberTicketsBoughtAtLotteryId - _cursor)) {
       length = numberTicketsBoughtAtLotteryId - _cursor;
@@ -554,7 +621,8 @@ contract SpecialLottery is Ownable, ReentrancyGuard, IDeHubRandConsumer, ITransf
     uint256 _lotteryId,
     uint256 _ticketId
   ) internal view returns (uint256) {
-    uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
+    uint256 ticketCount = 
+      _lotteries[_lotteryId].firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
 
     // DeLotto second stage
     if (ticketCount >= MAX_DELOTTO_SECOND_TICKETS) {

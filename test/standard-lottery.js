@@ -1,4 +1,3 @@
-const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { now, increaseTime, setBlockTime, generateTicketNumbers } = require("./utils/common");
@@ -25,14 +24,26 @@ describe("StandardLottery", () => {
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
-    this.standardLottery = await StandardLottery.deploy(
-      this.dehubToken.address,
-      this.dehubRandom.address
+    this.standardLottery = await upgrades.deployProxy(
+      StandardLottery,
+      [
+        this.dehubToken.address,
+        this.dehubRandom.address
+      ], {
+        kind: 'uups',
+        initializer: '__StandardLottery_init'
+      }
     );
     await this.standardLottery.deployed();
-    this.specialLottery = await SpecialLottery.deploy(
-      this.dehubToken.address,
-      this.dehubRandom.address
+    this.specialLottery = await upgrades.deployProxy(
+      SpecialLottery,
+      [
+        this.dehubToken.address,
+        this.dehubRandom.address
+      ], {
+        kind: 'uups',
+        initializer: '__SpecialLottery_init'
+      }
     );
     await this.specialLottery.deployed();
 
