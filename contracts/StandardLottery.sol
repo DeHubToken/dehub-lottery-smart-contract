@@ -55,7 +55,7 @@ contract StandardLottery is
   address public transfererAddress; // address who can tranfer
   address public deGrandAddress; // address to SpecialLottery
   address public teamWallet;
-  address public constant deadAddress =
+  address public constant DEAD_ADDRESS =
     0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
@@ -224,7 +224,7 @@ contract StandardLottery is
     dehubToken.safeTransferFrom(address(msg.sender), teamWallet, teamAmount);
     dehubToken.safeTransferFrom(
       address(msg.sender),
-      deadAddress,
+      DEAD_ADDRESS,
       amountDehubToTransfer.sub(deLottoAmount).sub(deGrandAmount).sub(
         teamAmount
       )
@@ -468,7 +468,7 @@ contract StandardLottery is
 
     uint256 remain = dehubToken.balanceOf(address(this));
     if (remain > 0) {
-      dehubToken.safeTransfer(deadAddress, remain);
+      dehubToken.safeTransfer(DEAD_ADDRESS, remain);
     }
 
     _lotteries[currentLotteryId].status = Status.Burned;

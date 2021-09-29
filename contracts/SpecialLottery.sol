@@ -49,7 +49,7 @@ contract SpecialLottery is
   address public transfererAddress; // address who can tranfer
   ITransferable public deLottoAddress; // Address to StandardLottery
   address public teamWallet;
-  address public constant deadAddress =
+  address public constant DEAD_ADDRESS =
     0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
@@ -191,7 +191,7 @@ contract SpecialLottery is
     dehubToken.safeTransferFrom(address(msg.sender), teamWallet, teamAmount);
     dehubToken.safeTransferFrom(
       address(msg.sender),
-      deadAddress,
+      DEAD_ADDRESS,
       amountDehubToTransfer.sub(deLottoAmount).sub(teamAmount)
     );
 
