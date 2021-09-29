@@ -416,7 +416,8 @@ contract StandardLottery is
       "Not time to start lottery"
     );
     require(
-      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
+      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) &&
+        ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
       "Lottery length outside of range"
     );
     require(
