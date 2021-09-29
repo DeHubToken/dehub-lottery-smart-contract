@@ -14,7 +14,7 @@ const addresses = {
   },
   testnet: {
     dehub: "0x5A5e32fE118E7c7b6536d143F446269123c0ba74",
-    randomGenerator: "0xB92D99cfDb06Fef8F9C528C06a065012Fd44686D"
+    randomGenerator: "0xA2355ED3bfDec475ff7b79C170A58E1B00fb5F2a"
   }
 }
 
@@ -49,20 +49,10 @@ async function main() {
 
   if (network.name === "testnet" || network.name === "mainnet") {
     // We get the contract to deploy
-    const RandomNumberGenerator = await ethers.getContractFactory("RandomNumberGenerator");
-    const randomNumberGenerator = await RandomNumberGenerator.deploy(
-      chainLinkAddress[network.name].vrfCoordinator,
-      chainLinkAddress[network.name].link
-    );
-    await randomNumberGenerator.deployed();
-    randomNumberGenerator.setKeyHash(
-      chainLinkAddress[network.name].keyHash
-    );
-
     const StandardLottery = await ethers.getContractFactory("StandardLottery");
     const standardUpgrades = await upgrades.deployProxy(StandardLottery, [
       addresses[network.name].dehub,
-      randomNumberGenerator.address, // addresses[network.name].randomGenerator
+      addresses[network.name].randomGenerator
     ], {
       kind: 'uups',
       initializer: '__StandardLottery_init'
@@ -75,7 +65,7 @@ async function main() {
     const SpecialLottery = await ethers.getContractFactory("SpecialLottery");
     const specialUpgrades = await upgrades.deployProxy(SpecialLottery, [
       addresses[network.name].dehub,
-      randomNumberGenerator.address, // addresses[network.name].randomGenerator
+      addresses[network.name].randomGenerator
     ], {
       kind: 'uups',
       initializer: '__SpecialLottery_init'
@@ -85,18 +75,10 @@ async function main() {
     await countTotalGas(specialUpgrades);
     console.log("Deployed SpecialLottery contracts", { totalGas });
 
-    console.log("RandomNumberGenerator deployed to:", randomNumberGenerator.address);
     console.log("StandardLottery deployed to:", standardUpgrades.address);
     console.log("SpecialLottery deployed to:", specialUpgrades.address);
     
     // Verify
-    await run("verify:verify", {
-      address: randomNumberGenerator.address,
-      constructorArguments: [
-        chainLinkAddress[network.name].vrfCoordinator,
-        chainLinkAddress[network.name].link
-      ]
-    });
     const standardImpl = await upgrades.erc1967.getImplementationAddress(
       standardUpgrades.address
     );
@@ -115,7 +97,7 @@ async function main() {
     // Set configuration on StandardLottery
     await standardUpgrades.setOperatorAddress(process.env.OPERATOR_ADDRESS);
     console.log(`Set operator of StandardLottery: ${process.env.OPERATOR_ADDRESS}`);
-    await standardUpgrades.setDeGrandAddress(standardUpgrades.address);
+    await standardUpgrades.setDeGrandAddress(specialUpgrades.address);
     console.log(`Set DeGrand of StandardLottery: ${specialUpgrades.address}`);
     await standardUpgrades.setTeamWallet(process.env.TEAM_WALLET);
     console.log(`Set team wallet of StandardLottery: ${process.env.TEAM_WALLET}`);

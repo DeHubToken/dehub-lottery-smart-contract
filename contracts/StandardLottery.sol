@@ -89,7 +89,7 @@ contract StandardLottery is
   mapping(address => mapping(uint256 => uint256[])) _userTicketIdsPerLotteryId;
 
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
-  uint256 public constant MAX_LENGTH_LOTTERY = 6 days + 5 minutes; // 6 days
+  uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
 
   uint256 public constant MAX_BUNDLE_RULES = 5;
   uint256 public constant MAX_TICKETS_PER_BUYCLAIM = 100;
@@ -415,11 +415,10 @@ contract StandardLottery is
         (_lotteries[currentLotteryId].status == Status.Claimable),
       "Not time to start lottery"
     );
-    // TODO
-    // require(
-    //   ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
-    //   "Lottery length outside of range"
-    // );
+    require(
+      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
+      "Lottery length outside of range"
+    );
     require(
       (_ticketRate >= minPriceTicketInDehub) &&
         (_ticketRate <= maxPriceTicketInDehub),
