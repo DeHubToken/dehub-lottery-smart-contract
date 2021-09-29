@@ -84,7 +84,7 @@ contract SpecialLottery is
   mapping(address => mapping(uint256 => uint256[])) _userTicketIdsPerLotteryId;
 
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
-  uint256 public constant MAX_LENGTH_LOTTERY = 6 days + 5 minutes; // 6 days
+  uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
 
   uint256 public constant MAX_TICKETS_PER_BUYCLAIM = 100;
   uint256 public constant MAX_DELOTTO_SECOND_TICKETS = 100;
