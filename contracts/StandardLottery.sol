@@ -78,15 +78,17 @@ contract StandardLottery is
   BundleRule[] public bundleRules;
 
   // <lotteryId, Lottery>
-  mapping(uint256 => Lottery) _lotteries;
+  mapping(uint256 => Lottery) private _lotteries;
   // <ticketId, Ticket>
-  mapping(uint256 => Ticket) _tickets;
+  mapping(uint256 => Ticket) private _tickets;
   // Bracket calculator is used for verifying claims for ticket prizes
   mapping(uint256 => uint256) private _bracketCalculator;
   // <lotteryId, <number, count>>
-  mapping(uint256 => mapping(uint256 => uint256)) _numberTicketsPerLotteryId;
+  mapping(uint256 => mapping(uint256 => uint256))
+    private _numberTicketsPerLotteryId;
   // <user address, <lotteryId, ticketId[]>>
-  mapping(address => mapping(uint256 => uint256[])) _userTicketIdsPerLotteryId;
+  mapping(address => mapping(uint256 => uint256[]))
+    private _userTicketIdsPerLotteryId;
 
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
   uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
