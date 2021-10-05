@@ -6,6 +6,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "./abstracts/DeHubLotterysUpgradeable.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
@@ -18,6 +19,7 @@ contract StandardLottery is
 {
   using SafeMathUpgradeable for uint256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
+  using AddressUpgradeable for address;
 
   enum Status {
     Pending, // == 0
@@ -107,8 +109,7 @@ contract StandardLottery is
   }
 
   modifier notContract() {
-    require(!_isContract(msg.sender), "Contract not allowed");
-    require(msg.sender == tx.origin, "Proxy contract not allowed");
+    require(!msg.sender.isContract(), "Contract not allowed");
     _;
   }
 
@@ -800,17 +801,5 @@ contract StandardLottery is
     uint256 _ticketCount
   ) internal pure returns (uint256) {
     return _ticketRate * _ticketCount;
-  }
-
-  /**
-   * @notice Checks if address is a contract
-   * @dev It prevents contract from being targetted
-   */
-  function _isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    assembly {
-      size := extcodesize(addr)
-    }
-    return size > 0;
   }
 }
