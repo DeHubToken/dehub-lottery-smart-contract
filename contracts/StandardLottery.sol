@@ -6,6 +6,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "./abstracts/DeHubLotterysUpgradeable.sol";
 import "./interfaces/IDeHubRand.sol";
 import "./interfaces/IDeHubRandConsumer.sol";
@@ -18,6 +19,7 @@ contract StandardLottery is
 {
   using SafeMathUpgradeable for uint256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
+  using AddressUpgradeable for address;
 
   enum Status {
     Pending, // == 0
@@ -55,7 +57,7 @@ contract StandardLottery is
   address public transfererAddress; // address who can tranfer
   address public deGrandAddress; // address to SpecialLottery
   address public teamWallet;
-  address public constant deadAddress =
+  address public constant DEAD_ADDRESS =
     0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
@@ -78,15 +80,17 @@ contract StandardLottery is
   BundleRule[] public bundleRules;
 
   // <lotteryId, Lottery>
-  mapping(uint256 => Lottery) _lotteries;
+  mapping(uint256 => Lottery) private _lotteries;
   // <ticketId, Ticket>
-  mapping(uint256 => Ticket) _tickets;
+  mapping(uint256 => Ticket) private _tickets;
   // Bracket calculator is used for verifying claims for ticket prizes
   mapping(uint256 => uint256) private _bracketCalculator;
   // <lotteryId, <number, count>>
-  mapping(uint256 => mapping(uint256 => uint256)) _numberTicketsPerLotteryId;
+  mapping(uint256 => mapping(uint256 => uint256))
+    private _numberTicketsPerLotteryId;
   // <user address, <lotteryId, ticketId[]>>
-  mapping(address => mapping(uint256 => uint256[])) _userTicketIdsPerLotteryId;
+  mapping(address => mapping(uint256 => uint256[]))
+    private _userTicketIdsPerLotteryId;
 
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
   uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
@@ -105,8 +109,7 @@ contract StandardLottery is
   }
 
   modifier notContract() {
-    require(!_isContract(msg.sender), "Contract not allowed");
-    require(msg.sender == tx.origin, "Proxy contract not allowed");
+    require(!msg.sender.isContract(), "Contract not allowed");
     _;
   }
 
@@ -224,7 +227,7 @@ contract StandardLottery is
     dehubToken.safeTransferFrom(address(msg.sender), teamWallet, teamAmount);
     dehubToken.safeTransferFrom(
       address(msg.sender),
-      deadAddress,
+      DEAD_ADDRESS,
       amountDehubToTransfer.sub(deLottoAmount).sub(deGrandAmount).sub(
         teamAmount
       )
@@ -416,7 +419,8 @@ contract StandardLottery is
       "Not time to start lottery"
     );
     require(
-      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) && ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
+      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) &&
+        ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
       "Lottery length outside of range"
     );
     require(
@@ -467,7 +471,7 @@ contract StandardLottery is
 
     uint256 remain = dehubToken.balanceOf(address(this));
     if (remain > 0) {
-      dehubToken.safeTransfer(deadAddress, remain);
+      dehubToken.safeTransfer(DEAD_ADDRESS, remain);
     }
 
     _lotteries[currentLotteryId].status = Status.Burned;
@@ -797,17 +801,5 @@ contract StandardLottery is
     uint256 _ticketCount
   ) internal pure returns (uint256) {
     return _ticketRate * _ticketCount;
-  }
-
-  /**
-   * @notice Checks if address is a contract
-   * @dev It prevents contract from being targetted
-   */
-  function _isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    assembly {
-      size := extcodesize(addr)
-    }
-    return size > 0;
   }
 }
