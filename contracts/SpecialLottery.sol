@@ -71,19 +71,20 @@ contract SpecialLottery is
   IDeHubRand public randomGenerator;
 
   // <lotteryId, Lottery>
-  mapping(uint256 => Lottery) _lotteries;
+  mapping(uint256 => Lottery) private _lotteries;
   // <lotteryId, <picked ticket id, bool>: Used in DeLotto second stage which has more than 100 tickets
-  mapping(uint256 => mapping(uint256 => bool)) _deLottoWinnerTicketIds;
+  mapping(uint256 => mapping(uint256 => bool)) private _deLottoWinnerTicketIds;
   // <lotteryId, <picked ticket id, bool>>
-  mapping(uint256 => mapping(uint256 => bool)) _deGrandWinnerTicketIds;
+  mapping(uint256 => mapping(uint256 => bool)) private _deGrandWinnerTicketIds;
   // <lotteryId, DeGrandWinner[]>
-  mapping(uint256 => DeGrandWinner[]) _deGrandWinners;
+  mapping(uint256 => DeGrandWinner[]) private _deGrandWinners;
   // <ticketId, user address>
-  mapping(uint256 => address) _tickets;
+  mapping(uint256 => address) private _tickets;
   // <ticketId, claimed>: Claimed status for DeLotto second stage
-  mapping(uint256 => bool) _claimed;
+  mapping(uint256 => bool) private _claimed;
   // <user address, <lotteryId, ticketId[]>>
-  mapping(address => mapping(uint256 => uint256[])) _userTicketIdsPerLotteryId;
+  mapping(address => mapping(uint256 => uint256[]))
+    private _userTicketIdsPerLotteryId;
 
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
   uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
@@ -323,7 +324,7 @@ contract SpecialLottery is
       _maxNumberDeGrandWinners <=
         _lotteries[_lotteryId].firstTicketIdNextLottery -
           _lotteries[_lotteryId].firstTicketId,
-      "Exceed to limit of special tickets count"
+      "Picking more than tickets total!"
     );
 
     // Request a random number from the generator based on a seed
