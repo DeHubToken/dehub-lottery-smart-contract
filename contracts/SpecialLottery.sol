@@ -328,6 +328,21 @@ contract SpecialLottery is
   }
 
   /**
+   * @notice View DeGrand prize by lottery id
+   * @param _lotteryId lottery id
+   * @dev Callable by users
+   */
+  function viewDeGrandPrizeByLotteryId(uint256 _lotteryId)
+    external
+    view
+    returns (DeGrandPrize memory)
+  {
+    uint256 endTime = _lotteries[_lotteryId].endTime;
+    uint256 deGrandMonth = endTime / 2629800; // 2629800 is a month in seconds
+    return _deGrandPrizes[deGrandMonth];
+  }
+
+  /**
    * @notice Set DeGrand Prize
    * @param _timestamp timestamp to get month index
    * @param _title Prize title
@@ -349,6 +364,7 @@ contract SpecialLottery is
     uint256 _maxNumberDeGrandWinners
   ) external onlyOwner {
     require(_maxNumberDeGrandWinners < 128, "Maximum limit of winners is 128");
+    require(bytes(_title).length > 0, "Empty prize title");
 
     uint256 deGrandMonth = _timestamp / 2629800; // 2629800 is a month in seconds
     _deGrandPrizes[deGrandMonth] = DeGrandPrize({
