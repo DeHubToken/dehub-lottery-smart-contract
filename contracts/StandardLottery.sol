@@ -652,7 +652,7 @@ contract StandardLottery is
   {
     uint256[] memory purchasedCount = new uint256[](bundleRules.length);
     uint256[] memory freeCount = new uint256[](bundleRules.length);
-    for (uint256 i = 1; i < bundleRules.length; i++) {
+    for (uint256 i = 0; i < bundleRules.length; i++) {
       purchasedCount[i] = bundleRules[i].purchasedTickets;
       freeCount[i] = bundleRules[i].freeTickets;
     }
