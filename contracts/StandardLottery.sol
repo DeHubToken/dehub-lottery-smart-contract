@@ -615,7 +615,7 @@ contract StandardLottery is
       }
     }
 
-    require(bundleRules.length + 1 < MAX_BUNDLE_RULES, "Maximum bundle rules");
+    require(bundleRules.length + 1 <= MAX_BUNDLE_RULES, "Maximum bundle rules");
     bundleRules.push(
       BundleRule({
         purchasedTickets: _purchasedTickets,
