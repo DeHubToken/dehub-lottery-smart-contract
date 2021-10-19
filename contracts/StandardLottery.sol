@@ -150,8 +150,8 @@ contract StandardLottery is
 
     maxNumberTicketsPerBuyOrClaim = 100;
 
-    maxPriceTicketInDehub = 50000;
-    minPriceTicketInDehub = 1000;
+    maxPriceTicketInDehub = 50000 * (10 ** 5);
+    minPriceTicketInDehub = 1000 * (10 ** 5);
 
     breakDownDeLottoPot = 5000; // 50%
     breakDownDeGrandPot = 3000; // 30%

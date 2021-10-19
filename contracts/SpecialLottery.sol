@@ -156,8 +156,8 @@ contract SpecialLottery is
 
     maxNumberTicketsPerBuyOrClaim = 100;
 
-    maxPriceTicketInDehub = 50000;
-    minPriceTicketInDehub = 1000;
+    maxPriceTicketInDehub = 50000 * (10 ** 5);
+    minPriceTicketInDehub = 1000 * (10 ** 5);
 
     breakDownDeLottoPot = 7000; // 70%
     breakDownTeamWallet = 2000; // 20%

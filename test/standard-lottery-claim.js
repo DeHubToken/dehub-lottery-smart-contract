@@ -1,3 +1,4 @@
+const { BigNumber } = require("@ethersproject/bignumber");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const {
@@ -8,7 +9,7 @@ const {
 } = require("./utils/common");
 
 describe("StandardLottery-claimable", () => {
-  const DEHUB_PRICE = 50000;
+  const DEHUB_PRICE = 50000 * 100000;
   const SIX_HOUR = 3600 * 6;
 
   let admin, operator, alpha, beta, gamma;
@@ -30,7 +31,7 @@ describe("StandardLottery-claimable", () => {
       admin
     );
 
-    this.dehubToken = await DehubToken.deploy("Dehub", "$Dehub", 10000000);
+    this.dehubToken = await DehubToken.deploy("Dehub", "$Dehub", BigNumber.from("1000000000000"));
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
@@ -53,9 +54,9 @@ describe("StandardLottery-claimable", () => {
     );
     await this.specialLottery.deployed();
 
-    await this.dehubToken.transfer(alpha.address, 1000000);
-    await this.dehubToken.transfer(beta.address, 1000000);
-    await this.dehubToken.transfer(gamma.address, 1000000);
+    await this.dehubToken.transfer(alpha.address, BigNumber.from("100000000000"));
+    await this.dehubToken.transfer(beta.address, BigNumber.from("100000000000"));
+    await this.dehubToken.transfer(gamma.address, BigNumber.from("100000000000"));
 
     /// Initialize Lottery
     // Set operator address
