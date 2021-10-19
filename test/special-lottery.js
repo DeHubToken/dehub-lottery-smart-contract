@@ -94,8 +94,8 @@ describe("SpecialLottery", () => {
     await this.specialLottery.connect(operator).closeLottery(lotteryId);
 
     // Check lottery information
-    const { status } = await this.specialLottery.viewLottery(lotteryId);
-    expect(status).to.equal(2); // Close
+    const { deLottoStatus } = await this.specialLottery.viewLottery(lotteryId);
+    expect(deLottoStatus).to.equal(2); // Close
   });
 
   it("buy tickets", async () => {
@@ -226,7 +226,18 @@ describe("SpecialLottery", () => {
     it("pick degrand stage", async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      await this.specialLottery.pickDeGrandWinners(lotteryId, 9);
+      const timestamp = Math.floor(new Date().getTime() / 1000);
+      await this.specialLottery.setDeGrandPrize(
+        timestamp,
+        "iPhone 13", // title
+        "", // subtitle
+        "", // description
+        "", // ctaUrl
+        "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png", // imageUrl
+        1 // maximum nubmer of winners
+      );
+
+      await this.specialLottery.pickDeGrandWinners(lotteryId);
 
       const deGrandInfo = await this.specialLottery
         .connect(alpha)
