@@ -30,7 +30,8 @@ contract SpecialLottery is
   }
 
   struct Lottery {
-    Status status;
+    Status deLottoStatus; // Status for DeLotto second stage
+    Status deGrandStatus; // Status for DeGrand stage
     uint256 startTime;
     uint256 endTime;
     uint256 ticketRate; // $Dehub price per ticket
@@ -177,7 +178,7 @@ contract SpecialLottery is
     require(_ticketCount <= maxNumberTicketsPerBuyOrClaim, "Too many tickets");
 
     require(
-      _lotteries[_lotteryId].status == Status.Open,
+      _lotteries[_lotteryId].deLottoStatus == Status.Open,
       "Lottery is not open"
     );
     require(
@@ -240,7 +241,7 @@ contract SpecialLottery is
       "Too many tickets"
     );
     require(
-      _lotteries[_lotteryId].status == Status.Claimable,
+      _lotteries[_lotteryId].deLottoStatus == Status.Claimable,
       "Lottery not claimable"
     );
 
@@ -297,7 +298,7 @@ contract SpecialLottery is
    * @dev Callabel by operator
    */
   function closeLottery(uint256 _lotteryId) external onlyOperator nonReentrant {
-    require(_lotteries[_lotteryId].status == Status.Open, "Lottery not open");
+    require(_lotteries[_lotteryId].deLottoStatus == Status.Open, "Lottery not open");
     require(
       block.timestamp >= _lotteries[_lotteryId].endTime,
       "Lottery not over"
@@ -307,7 +308,8 @@ contract SpecialLottery is
     // Request a random number from the generator based on a seed
     randomGenerator.getRandomNumber();
 
-    _lotteries[_lotteryId].status = Status.Close;
+    _lotteries[_lotteryId].deLottoStatus = Status.Close;
+    _lotteries[_lotteryId].deGrandStatus = Status.Close;
 
     emit LotteryClose(_lotteryId, currentTicketId);
   }
@@ -337,7 +339,7 @@ contract SpecialLottery is
     view
     returns (DeGrandPrize memory)
   {
-    uint256 endTime = _lotteries[_lotteryId].endTime;
+    uint256 endTime = _lotteries[_lotteryId].startTime;
     uint256 deGrandMonth = endTime / 2629800; // 2629800 is a month in seconds
     return _deGrandPrizes[deGrandMonth];
   }
@@ -387,8 +389,8 @@ contract SpecialLottery is
     uint256 _lotteryId
   ) external onlyOwner nonReentrant {
     require(
-      _lotteries[_lotteryId].status == Status.Close ||
-        _lotteries[_lotteryId].status == Status.Claimable,
+      _lotteries[_lotteryId].deGrandStatus == Status.Close ||
+        _lotteries[_lotteryId].deGrandStatus == Status.Claimable,
       "Lottery not closed and claimable"
     );
     require(
@@ -397,8 +399,15 @@ contract SpecialLottery is
     );
 
     uint256 deGrandMonth = _lotteries[_lotteryId].startTime / 2629800; // 2629800 is a month in seconds
+    require(
+      deGrandMonth == _deGrandPrizes[deGrandMonth].deGrandMonth,
+      "DeGrand Prize was not set"
+    );
     uint256 maxWinnerCount = _deGrandPrizes[deGrandMonth].maxWinnerCount;
-    require(maxWinnerCount < 128, "Maximum limit of winners is 128");
+    require(
+      maxWinnerCount > 0 && maxWinnerCount < 128,
+      "Number of winners is between 1 to 128"
+    );
     require(
       maxWinnerCount <=
         _lotteries[_lotteryId].firstTicketIdNextLottery -
@@ -430,7 +439,7 @@ contract SpecialLottery is
     // Update internal statuses for lottery
     _lotteries[_lotteryId].deGrandMaximumWinners = maxWinnerCount;
     _lotteries[_lotteryId].deGrandFinalNumber = finalNumber; // TODO, will be removed on mainnet
-    _lotteries[_lotteryId].status = Status.Claimable;
+    _lotteries[_lotteryId].deGrandStatus = Status.Claimable;
   }
 
   /**
@@ -444,8 +453,8 @@ contract SpecialLottery is
     nonReentrant
   {
     require(
-      _lotteries[_lotteryId].status == Status.Close ||
-        _lotteries[_lotteryId].status == Status.Claimable,
+      _lotteries[_lotteryId].deLottoStatus == Status.Close ||
+        _lotteries[_lotteryId].deLottoStatus == Status.Claimable,
       "Lottery not closed"
     );
     require(
@@ -453,7 +462,7 @@ contract SpecialLottery is
       "Numbers not drawn"
     );
 
-    _lotteries[_lotteryId].status = Status.Claimable;
+    _lotteries[_lotteryId].deLottoStatus = Status.Claimable;
 
     uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
       _lotteries[_lotteryId].firstTicketId;
@@ -495,7 +504,7 @@ contract SpecialLottery is
   {
     require(
       (currentLotteryId == 0) ||
-        (_lotteries[currentLotteryId].status == Status.Claimable),
+        (_lotteries[currentLotteryId].deLottoStatus == Status.Claimable),
       "Not time to start lottery"
     );
     require(
@@ -512,7 +521,8 @@ contract SpecialLottery is
     currentLotteryId++;
 
     _lotteries[currentLotteryId] = Lottery({
-      status: Status.Open,
+      deLottoStatus: Status.Open,
+      deGrandStatus: Status.Open,
       startTime: block.timestamp,
       endTime: _endTime,
       ticketRate: _ticketRate,
@@ -671,6 +681,22 @@ contract SpecialLottery is
   }
 
   /**
+   * @notice View lottery drawed status and final number
+   * @param _lotteryId lottery id
+   * @dev Callable by users
+   */
+  function viewLotteryDrawable(uint256 _lotteryId)
+    external
+    view
+    returns (Status, Status)
+  {
+    return (
+      _lotteries[_lotteryId].deLottoStatus,
+      _lotteries[_lotteryId].deGrandStatus
+    );
+  }
+
+  /**
    * @notice View DeLotto second stage rewards for ticket ids
    * @param _lotteryId lottery id
    * @param _ticketIds array of ticket ids
@@ -679,8 +705,8 @@ contract SpecialLottery is
     uint256 _lotteryId,
     uint256[] calldata _ticketIds
   ) external view returns (uint256) {
-    // Check lottery is in claimable status
-    if (_lotteries[_lotteryId].status != Status.Claimable) {
+    // Check if lottery is in claimable status
+    if (_lotteries[_lotteryId].deLottoStatus != Status.Claimable) {
       return 0;
     }
 
