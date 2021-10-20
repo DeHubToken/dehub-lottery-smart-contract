@@ -37,7 +37,8 @@ contract StandardLottery is
     uint256[4] rewardBreakdown; // Gold, Silver, Bronze tier for DeLotto
     uint256[4] countWinnersPerBracket;
     uint256[4] tokenPerBracket;
-    uint256 amountCollectedToken; // collected $Dehub token amount
+    uint256 unwonPreviousPot; // unwon pot in previous round
+    uint256 amountCollectedToken; // Collected $Dehub token amount which transfered to DeLotto
     uint256 firstTicketId;
     uint256 firstTicketIdNextLottery;
     uint256 finalNumber; // 8 weight number, each two number is from 01~18
@@ -62,6 +63,7 @@ contract StandardLottery is
 
   uint256 public currentLotteryId;
   uint256 public currentTicketId;
+  uint256 public unwonPreviousPot; // Unwon prize pot in previous round
 
   uint256 public maxNumberTicketsPerBuyOrClaim;
 
@@ -92,11 +94,11 @@ contract StandardLottery is
   mapping(address => mapping(uint256 => uint256[]))
     private _userTicketIdsPerLotteryId;
 
+
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
   uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
 
   uint256 public constant MAX_BUNDLE_RULES = 5;
-  uint256 public constant MAX_TICKETS_PER_BUYCLAIM = 100;
 
   modifier onlyOperator() {
     require(msg.sender == operatorAddress, "Operator is required");
@@ -118,13 +120,18 @@ contract StandardLottery is
     uint256 startTime,
     uint256 endTime,
     uint256 priceTicketInDehub,
-    uint256 firstTicketId
+    uint256 firstTicketId,
+    uint256 unwonPreviousPot
   );
   event LotteryClose(
     uint256 indexed lotteryId,
     uint256 firstTicketIdNextLottery
   );
-  event LotteryNumberDrawn(uint256 indexed lotteryId, uint256 finalNumber);
+  event LotteryNumberDrawn(
+    uint256 indexed lotteryId,
+    uint256 finalNumber,
+    uint256 unwonPot
+  );
   event TicketsPurchase(
     address indexed buyer,
     uint256 indexed lotteryId,
@@ -233,7 +240,7 @@ contract StandardLottery is
       )
     );
 
-    _lotteries[_lotteryId].amountCollectedToken += amountDehubToTransfer;
+    _lotteries[_lotteryId].amountCollectedToken += deLottoAmount;
 
     for (uint256 i = 0; i < _ticketNumbers.length; i++) {
       uint256 ticketNumber = _ticketNumbers[i];
@@ -370,8 +377,10 @@ contract StandardLottery is
       randomGenerator.viewRandomResult256(address(this))
     );
     // DeLotto pot amount
-    uint256 deLottoPot = dehubToken.balanceOf(address(this));
+    uint256 deLottoPot = _lotteries[_lotteryId].unwonPreviousPot +
+      _lotteries[_lotteryId].amountCollectedToken;
     uint256 previousCountWinners = 0;
+    uint256 claimablePot = 0; // Claimable winning pot
 
     // Calculate prizes in $Dehub for each bracket by starting from the highest one
     for (uint256 i = 0; i < 4; i++) {
@@ -391,6 +400,10 @@ contract StandardLottery is
           .mul(_lotteries[_lotteryId].rewardBreakdown[j])
           .div(10000)
           .div(_lotteries[_lotteryId].countWinnersPerBracket[j]);
+
+        claimablePot = claimablePot.add(
+          deLottoPot.mul(_lotteries[_lotteryId].rewardBreakdown[j]).div(10000)
+        );
         previousCountWinners = _lotteries[_lotteryId].countWinnersPerBracket[j];
       } else {
         _lotteries[_lotteryId].tokenPerBracket[j] = 0;
@@ -400,8 +413,9 @@ contract StandardLottery is
     // Update internal statuses for lottery
     _lotteries[_lotteryId].finalNumber = finalNumber;
     _lotteries[_lotteryId].status = Status.Claimable;
+    unwonPreviousPot = deLottoPot.sub(claimablePot);
 
-    emit LotteryNumberDrawn(currentLotteryId, finalNumber);
+    emit LotteryNumberDrawn(currentLotteryId, finalNumber, unwonPreviousPot);
   }
 
   /**
@@ -442,6 +456,7 @@ contract StandardLottery is
       rewardBreakdown: _rewardBreakdown,
       countWinnersPerBracket: [uint256(0), uint256(0), uint256(0), uint256(0)],
       tokenPerBracket: [uint256(0), uint256(0), uint256(0), uint256(0)],
+      unwonPreviousPot: unwonPreviousPot,
       amountCollectedToken: 0,
       firstTicketId: currentTicketId,
       firstTicketIdNextLottery: currentTicketId,
@@ -453,14 +468,17 @@ contract StandardLottery is
       block.timestamp,
       _endTime,
       _ticketRate,
-      currentTicketId
+      currentTicketId,
+      unwonPreviousPot
     );
+
+    unwonPreviousPot = 0;
   }
 
   /**
    * @notice Burn claimed pot
    * @param _lotteryId lottery id
-   * @dev Callable by operator
+   * @dev Callable by operator at the last day of the month at 23:59 UTC
    */
   function burnUnclaimed(uint256 _lotteryId) external onlyOperator {
     require(
@@ -478,6 +496,8 @@ contract StandardLottery is
     }
 
     _lotteries[currentLotteryId].status = Status.Burned;
+    // After burning, start from zero, need to make previous pot zero
+    unwonPreviousPot = 0;
   }
 
   /**
@@ -521,11 +541,7 @@ contract StandardLottery is
   function setMaxNumberTicketsPerBuyOrClaim(
     uint256 _maxNumberTicketsPerBuyOrClaim
   ) external onlyOwner {
-    require(
-      _maxNumberTicketsPerBuyOrClaim > 0 &&
-        _maxNumberTicketsPerBuyOrClaim <= MAX_TICKETS_PER_BUYCLAIM,
-      "Must be > 0"
-    );
+    require(_maxNumberTicketsPerBuyOrClaim > 0, "Must be > 0");
     maxNumberTicketsPerBuyOrClaim = _maxNumberTicketsPerBuyOrClaim;
   }
 
@@ -666,6 +682,14 @@ contract StandardLottery is
    */
   function viewCurrentTaskId() external view override returns (uint256) {
     return currentLotteryId;
+  }
+
+  /**
+   * @notice View current unwinable pot
+   * @dev Callable by SpecialLottery contract
+   */
+  function viewLastUnwonPot() external view returns (uint256) {
+    return unwonPreviousPot;
   }
 
   /**

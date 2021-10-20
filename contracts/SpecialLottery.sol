@@ -35,7 +35,8 @@ contract SpecialLottery is
     uint256 startTime;
     uint256 endTime;
     uint256 ticketRate; // $Dehub price per ticket
-    uint256 amountCollectedToken; // Collected $Dehub token amount
+    uint256 unwonPreviousPot; // unwon pot in previous round
+    uint256 amountCollectedToken; // Collected $Dehub token amount which transfered to DeLotto
     uint256 firstTicketId;
     uint256 firstTicketIdNextLottery;
     uint256 deLottoFinalNumber; // Final number for DeLotto second stage, TODO, will be removed on mainnet
@@ -99,10 +100,7 @@ contract SpecialLottery is
   mapping(address => mapping(uint256 => uint256[]))
     private _userTicketIdsPerLotteryId;
 
-  uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
-  uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
-
-  uint256 public constant MAX_TICKETS_PER_BUYCLAIM = 100;
+  // Maximum number of tickets to be awarded on DeLotto second stage
   uint256 public constant MAX_DELOTTO_SECOND_TICKETS = 100;
 
   modifier onlyOperator() {
@@ -125,7 +123,8 @@ contract SpecialLottery is
     uint256 startTime,
     uint256 endTime,
     uint256 priceTicketInDehub,
-    uint256 firstTicketId
+    uint256 firstTicketId,
+    uint256 unwonPreviousPot
   );
   event LotteryClose(
     uint256 indexed lotteryId,
@@ -210,7 +209,7 @@ contract SpecialLottery is
       amountDehubToTransfer.sub(deLottoAmount).sub(teamAmount)
     );
 
-    _lotteries[_lotteryId].amountCollectedToken = amountDehubToTransfer;
+    _lotteries[_lotteryId].amountCollectedToken += deLottoAmount;
 
     for (uint256 i = 0; i < _ticketCount; i++) {
       _tickets[currentTicketId] = msg.sender;
@@ -244,6 +243,7 @@ contract SpecialLottery is
       _lotteries[_lotteryId].deLottoStatus == Status.Claimable,
       "Lottery not claimable"
     );
+    require(_lotteryId == currentLotteryId, "Not a current round");
 
     // Initializes the rewardInDehubToTransfer
     uint256 rewardInDehubToTransfer;
@@ -508,11 +508,6 @@ contract SpecialLottery is
       "Not time to start lottery"
     );
     require(
-      ((_endTime - block.timestamp) > MIN_LENGTH_LOTTERY) &&
-        ((_endTime - block.timestamp) < MAX_LENGTH_LOTTERY),
-      "Lottery length outside of range"
-    );
-    require(
       (_ticketRate >= minPriceTicketInDehub) &&
         (_ticketRate <= maxPriceTicketInDehub),
       "Outside of limits"
@@ -526,6 +521,7 @@ contract SpecialLottery is
       startTime: block.timestamp,
       endTime: _endTime,
       ticketRate: _ticketRate,
+      unwonPreviousPot: deLottoAddress.viewLastUnwonPot(),
       amountCollectedToken: 0,
       firstTicketId: currentTicketId,
       firstTicketIdNextLottery: currentTicketId,
@@ -584,11 +580,7 @@ contract SpecialLottery is
   function setMaxNumberTicketsPerBuyOrClaim(
     uint256 _maxNumberTicketsPerBuyOrClaim
   ) external onlyOwner {
-    require(
-      _maxNumberTicketsPerBuyOrClaim > 0 &&
-        _maxNumberTicketsPerBuyOrClaim <= MAX_TICKETS_PER_BUYCLAIM,
-      "Must be > 0"
-    );
+    require(_maxNumberTicketsPerBuyOrClaim > 0, "Must be > 0");
     maxNumberTicketsPerBuyOrClaim = _maxNumberTicketsPerBuyOrClaim;
   }
 
@@ -747,8 +739,7 @@ contract SpecialLottery is
 
     bool[] memory winnings = new bool[](ticketCount);
 
-    uint256 lotteryTicketCount = 
-      _lotteries[_lotteryId].firstTicketIdNextLottery -
+    uint256 lotteryTicketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
       _lotteries[_lotteryId].firstTicketId;
 
     if (lotteryTicketCount >= MAX_DELOTTO_SECOND_TICKETS) {
@@ -872,15 +863,19 @@ contract SpecialLottery is
   {
     uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
       _lotteries[_lotteryId].firstTicketId;
+    uint256 deLottoPot = _lotteries[_lotteryId].unwonPreviousPot +
+      _lotteries[_lotteryId].amountCollectedToken;
 
     // DeLotto second stage
     if (ticketCount >= MAX_DELOTTO_SECOND_TICKETS) {
       // If bought over 100 tickets, pick randomly 100 tickets
       if (_deLottoWinnerTicketIds[_lotteryId][_ticketId]) {
-        return dehubToken.balanceOf(address(deLottoAddress)).div(100); // every ticket has 1% of unwon pot
+        // every ticket has 1% of unwon pot
+        return dehubToken.balanceOf(deLottoPot).div(100);
       }
     } else {
-      return dehubToken.balanceOf(address(deLottoAddress)).div(100); // every ticket has 1% of unwon pot
+      // every ticket has 1% of unwon pot
+      return dehubToken.balanceOf(deLottoPot).div(100);
     }
     return 0;
   }
