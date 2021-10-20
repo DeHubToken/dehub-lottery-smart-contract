@@ -3,31 +3,13 @@
 pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "./abstracts/DeHubLotterysUpgradeable.sol";
-import "./interfaces/IDeHubRand.sol";
-import "./interfaces/IDeHubRandConsumer.sol";
-import "./interfaces/ITransferable.sol";
+import "./abstracts/DeHubLotterysAbstract.sol";
 import "./libraries/Utils.sol";
 
-contract SpecialLottery is
-  DeHubLotterysUpgradeable,
-  IDeHubRandConsumer,
-  ITransferable
-{
+contract SpecialLottery is DeHubLotterysAbstract {
   using SafeMathUpgradeable for uint256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using AddressUpgradeable for address;
-
-  enum Status {
-    Pending, // == 0
-    Open, // == 1
-    Close, // == 2
-    Claimable // == 3
-  }
 
   struct Lottery {
     Status deLottoStatus; // Status for DeLotto second stage
@@ -60,27 +42,7 @@ contract SpecialLottery is
   }
 
   address public operatorAddress; // Scheduler wallet address
-  address public transfererAddress; // address who can tranfer
-  ITransferable public deLottoAddress; // Address to StandardLottery
-  address public teamWallet;
-  address public constant DEAD_ADDRESS =
-    0x000000000000000000000000000000000000dEaD;
-
-  uint256 public currentLotteryId;
-  uint256 public currentTicketId;
-
-  uint256 public maxNumberTicketsPerBuyOrClaim;
-
-  uint256 public maxPriceTicketInDehub;
-  uint256 public minPriceTicketInDehub;
-
-  uint256 public breakDownDeLottoPot;
-  uint256 public breakDownTeamWallet;
-  uint256 public breakDownBurn;
-
-  IERC20Upgradeable public dehubToken;
-
-  IDeHubRand public randomGenerator;
+  DeHubLotterysAbstract public deLottoAddress; // Address to StandardLottery
 
   // <lotteryId, Lottery>
   mapping(uint256 => Lottery) private _lotteries;
@@ -108,16 +70,6 @@ contract SpecialLottery is
     _;
   }
 
-  modifier onlyTransferer() {
-    require(msg.sender == transfererAddress, "Transferer is required");
-    _;
-  }
-
-  modifier notContract() {
-    require(!msg.sender.isContract(), "Contract not allowed");
-    _;
-  }
-
   event LotteryOpen(
     uint256 indexed lotteryId,
     uint256 startTime,
@@ -129,6 +81,17 @@ contract SpecialLottery is
   event LotteryClose(
     uint256 indexed lotteryId,
     uint256 firstTicketIdNextLottery
+  );
+  event PickAwardWinners(
+    uint256 indexed lotteryId,
+    uint256 maxPickedCount,
+    uint256 finalNumber
+  );
+  event PickDeGrandWinners(
+    uint256 indexed lotteryId,
+    uint256 deGrandMonth,
+    uint256 maxWinnerCount,
+    uint256 finalNumber
   );
   event TicketsPurchase(
     address indexed buyer,
@@ -440,6 +403,8 @@ contract SpecialLottery is
     _lotteries[_lotteryId].deGrandMaximumWinners = maxWinnerCount;
     _lotteries[_lotteryId].deGrandFinalNumber = finalNumber; // TODO, will be removed on mainnet
     _lotteries[_lotteryId].deGrandStatus = Status.Claimable;
+
+    emit PickDeGrandWinners(_lotteryId, deGrandMonth, maxWinnerCount, finalNumber);
   }
 
   /**
@@ -467,6 +432,7 @@ contract SpecialLottery is
     uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
       _lotteries[_lotteryId].firstTicketId;
     if (ticketCount < MAX_DELOTTO_SECOND_TICKETS) {
+      emit PickAwardWinners(_lotteryId, ticketCount, 0);
       return;
     }
 
@@ -490,6 +456,8 @@ contract SpecialLottery is
 
     // Update internal statuses for lottery
     _lotteries[_lotteryId].deLottoFinalNumber = finalNumber; // TODO, will be removed on mainnet
+
+    emit PickAwardWinners(_lotteryId, MAX_DELOTTO_SECOND_TICKETS, finalNumber);
   }
 
   /**
@@ -515,13 +483,15 @@ contract SpecialLottery is
 
     currentLotteryId++;
 
+    uint256 unwonPreviousPot = deLottoAddress.viewLastUnwonPot();
+
     _lotteries[currentLotteryId] = Lottery({
       deLottoStatus: Status.Open,
       deGrandStatus: Status.Open,
       startTime: block.timestamp,
       endTime: _endTime,
       ticketRate: _ticketRate,
-      unwonPreviousPot: deLottoAddress.viewLastUnwonPot(),
+      unwonPreviousPot: unwonPreviousPot,
       amountCollectedToken: 0,
       firstTicketId: currentTicketId,
       firstTicketIdNextLottery: currentTicketId,
@@ -535,22 +505,9 @@ contract SpecialLottery is
       block.timestamp,
       _endTime,
       _ticketRate,
-      currentTicketId
+      currentTicketId,
+      unwonPreviousPot
     );
-  }
-
-  /**
-   * @notice Transfers $Dehub to address
-   * @param _addr destination address
-   * @param _amount $Dehub token amount
-   * @dev Callable by owner
-   */
-  function transferTo(address _addr, uint256 _amount)
-    external
-    override
-    onlyTransferer
-  {
-    dehubToken.safeTransfer(_addr, _amount);
   }
 
   /**
@@ -594,69 +551,12 @@ contract SpecialLottery is
   }
 
   /**
-   * @notice Set transferer address
-   * @param _address transferer address
-   * @dev Callable by owner
-   */
-  function setTransfererAddress(address _address) external onlyOwner {
-    transfererAddress = _address;
-  }
-
-  /**
    * @notice Set DeLotto address
    * @param _address DeLotto address
    * @dev Callable by owner
    */
-  function setDeLottoAddress(ITransferable _address) external onlyOwner {
+  function setDeLottoAddress(DeHubLotterysAbstract _address) external onlyOwner {
     deLottoAddress = _address;
-  }
-
-  /**
-   * @notice Set team wallet
-   * @param _address team wallet
-   * @dev Callable by owner
-   */
-  function setTeamWallet(address _address) external onlyOwner {
-    teamWallet = _address;
-  }
-
-  /**
-   * @notice Set random generator
-   * @param _address random generator
-   * @dev Callable by owner
-   */
-  function setRandomGenerator(IDeHubRand _address) external onlyOwner {
-    randomGenerator = _address;
-  }
-
-  /**
-   * @notice Set breakdown percent
-   * @param _deLottoPercent DeLotto pot percent
-   * @param _teamPercent team percent
-   * @param _burnPercent burn percent
-   */
-  function setBreakdownPercent(
-    uint256 _deLottoPercent,
-    uint256 _teamPercent,
-    uint256 _burnPercent
-  ) external onlyOwner {
-    require(
-      _deLottoPercent + _teamPercent + _burnPercent == 10000,
-      "Invalid percent"
-    );
-
-    breakDownDeLottoPot = _deLottoPercent;
-    breakDownTeamWallet = _teamPercent;
-    breakDownBurn = _burnPercent;
-  }
-
-  /**
-   * @notice View current lottery id
-   * @return current lottery id
-   * @dev Callable by users
-   */
-  function viewCurrentTaskId() external view override returns (uint256) {
-    return currentLotteryId;
   }
 
   /**
@@ -871,11 +771,11 @@ contract SpecialLottery is
       // If bought over 100 tickets, pick randomly 100 tickets
       if (_deLottoWinnerTicketIds[_lotteryId][_ticketId]) {
         // every ticket has 1% of unwon pot
-        return dehubToken.balanceOf(deLottoPot).div(100);
+        return deLottoPot.div(100);
       }
     } else {
       // every ticket has 1% of unwon pot
-      return dehubToken.balanceOf(deLottoPot).div(100);
+      return deLottoPot.div(100);
     }
     return 0;
   }

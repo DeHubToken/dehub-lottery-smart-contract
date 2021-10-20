@@ -76,6 +76,7 @@ describe("SpecialLottery", () => {
     // Set breakdown percent
     await this.specialLottery.setBreakdownPercent(
       7000, // DeLotto pot
+      0, // DeGrand pot
       2000, // Team Wallet
       1000 // Burn
     );
