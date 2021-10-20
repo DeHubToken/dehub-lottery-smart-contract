@@ -2,10 +2,6 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "./DeHubLotterysUpgradeable.sol";
 import "../interfaces/IDeHubRand.sol";
 import "../interfaces/IDeHubRandConsumer.sol";
@@ -14,7 +10,6 @@ abstract contract DeHubLotterysAbstract is
   DeHubLotterysUpgradeable,
   IDeHubRandConsumer
 {
-  using SafeMathUpgradeable for uint256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
   using AddressUpgradeable for address;
 

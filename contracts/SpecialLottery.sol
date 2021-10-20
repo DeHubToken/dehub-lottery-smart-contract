@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "./abstracts/DeHubLotterysAbstract.sol";
 import "./libraries/Utils.sol";
 
