@@ -382,7 +382,10 @@ contract StandardLottery is DeHubLotterysAbstract {
   ) external onlyOperator {
     require(
       (currentLotteryId == 0) ||
-        (_lotteries[currentLotteryId].status == Status.Claimable),
+        (
+          _lotteries[currentLotteryId].status == Status.Claimable ||
+          _lotteries[currentLotteryId].status == Status.Burned
+        ),
       "Not time to start lottery"
     );
     require(
