@@ -142,6 +142,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     external
     notContract
     nonReentrant
+    whenNotPaused
   {
     require(_ticketCount <= maxNumberTicketsPerBuyOrClaim, "Too many tickets");
 
@@ -202,6 +203,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     external
     notContract
     nonReentrant
+    whenNotPaused
   {
     require(_ticketIds.length != 0, "Length must be >0");
     require(
@@ -266,7 +268,12 @@ contract SpecialLottery is DeHubLotterysAbstract {
    * @param _lotteryId lottery id
    * @dev Callabel by operator
    */
-  function closeLottery(uint256 _lotteryId) external onlyOperator nonReentrant {
+  function closeLottery(uint256 _lotteryId)
+    external
+    onlyOperator
+    nonReentrant
+    whenNotPaused
+  {
     require(_lotteries[_lotteryId].deLottoStatus == Status.Open, "Lottery not open");
     require(
       block.timestamp >= _lotteries[_lotteryId].endTime,
@@ -354,7 +361,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
    */
   function pickDeGrandWinners(
     uint256 _lotteryId
-  ) external onlyOwner nonReentrant {
+  ) external onlyOwner nonReentrant whenNotPaused {
     require(
       _lotteries[_lotteryId].deGrandStatus == Status.Close ||
         _lotteries[_lotteryId].deGrandStatus == Status.Claimable,
@@ -425,6 +432,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     external
     onlyOperator
     nonReentrant
+    whenNotPaused
   {
     require(
       _lotteries[_lotteryId].deLottoStatus == Status.Close ||
@@ -475,6 +483,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
   function startLottery(uint256 _endTime, uint256 _ticketRate)
     external
     onlyOperator
+    whenNotPaused
   {
     require(
       (currentLotteryId == 0) ||

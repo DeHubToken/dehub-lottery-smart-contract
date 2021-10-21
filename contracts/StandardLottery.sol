@@ -54,9 +54,8 @@ contract StandardLottery is DeHubLotterysAbstract {
   mapping(address => mapping(uint256 => uint256[]))
     private _userTicketIdsPerLotteryId;
 
-
-  uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
-  uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
+  uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 10 minutes; // 6 hours
+  uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 10 minutes; // 6 hours
 
   uint256 public constant MAX_BUNDLE_RULES = 100;
 
@@ -137,7 +136,7 @@ contract StandardLottery is DeHubLotterysAbstract {
     uint256 _lotteryId,
     uint256 _purchasedTicketCount,
     uint256[] calldata _ticketNumbers
-  ) external notContract nonReentrant {
+  ) external notContract nonReentrant whenNotPaused {
     require(_ticketNumbers.length != 0, "No ticket specified");
     require(
       _ticketNumbers.length <= maxNumberTicketsPerBuyOrClaim,
@@ -235,7 +234,7 @@ contract StandardLottery is DeHubLotterysAbstract {
     uint256 _lotteryId,
     uint256[] calldata _ticketIds,
     uint256[] calldata _brackets
-  ) external notContract nonReentrant {
+  ) external notContract nonReentrant whenNotPaused {
     require(_ticketIds.length == _brackets.length, "Not same length");
     require(_ticketIds.length != 0, "Length must be >0");
     require(
@@ -294,7 +293,12 @@ contract StandardLottery is DeHubLotterysAbstract {
    * @param _lotteryId lottery id
    * @dev Callable by operator
    */
-  function closeLottery(uint256 _lotteryId) external onlyOperator nonReentrant {
+  function closeLottery(uint256 _lotteryId)
+    external
+    onlyOperator
+    nonReentrant
+    whenNotPaused
+  {
     require(_lotteries[_lotteryId].status == Status.Open, "Lottery not open");
     require(
       block.timestamp >= _lotteries[_lotteryId].endTime,
@@ -319,6 +323,7 @@ contract StandardLottery is DeHubLotterysAbstract {
     external
     onlyOperator
     nonReentrant
+    whenNotPaused
   {
     require(_lotteries[_lotteryId].status == Status.Close, "Lottery not close");
     require(
@@ -383,7 +388,7 @@ contract StandardLottery is DeHubLotterysAbstract {
     uint256 _endTime,
     uint256 _ticketRate,
     uint256[4] calldata _rewardBreakdown
-  ) external onlyOperator {
+  ) external onlyOperator whenNotPaused {
     require(
       (currentLotteryId == 0) ||
         (

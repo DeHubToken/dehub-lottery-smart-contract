@@ -55,6 +55,9 @@ abstract contract DeHubLotterysAbstract is
     _;
   }
 
+  event Pause();
+  event Unpause();
+
   /**
    * @notice Set transferer address
    * @param _address transferer address
@@ -134,5 +137,23 @@ abstract contract DeHubLotterysAbstract is
     onlyTransferer
   {
     dehubToken.safeTransfer(_addr, _amount);
+  }
+
+  /**
+   * @notice Triggers stopped state
+   * @dev Only possible when contract not paused.
+   */
+  function pause() external onlyOwner whenNotPaused {
+    _pause();
+    emit Pause();
+  }
+
+  /**
+   * @notice Returns to normal state
+   * @dev Only possible when contract is paused
+   */
+  function unpause() external onlyOwner whenPaused {
+    _unpause();
+    emit Unpause();
   }
 }
