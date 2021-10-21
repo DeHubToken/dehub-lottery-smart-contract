@@ -16,7 +16,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     Status deLottoStatus; // Status for DeLotto second stage
     Status deGrandStatus; // Status for DeGrand stage
     uint256 startTime;
-    uint256 endTime;
+    uint256 endTime; // Close time for DeLotto second stage
     uint256 ticketRate; // $Dehub price per ticket
     uint256 unwonPreviousPot; // unwon pot in previous round
     uint256 amountCollectedToken; // Collected $Dehub token amount which transfered to DeLotto
@@ -28,7 +28,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
   }
 
   struct DeGrandPrize {
-    uint256 deGrandMonth; // number of months from Jan.1970, DeGrand has only one time per every month
+    uint256 drawTime; // Draw time for DeGrand stage
     string title;
     string subtitle;
     string description; // (optional)
@@ -52,6 +52,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
   // <lotteryId, <picked ticket id, bool>>
   mapping(uint256 => mapping(uint256 => bool)) private _deGrandWinnerTicketIds;
   // <month index, DeGrandPrize[]>
+  // month index: number of months from Jan.1970, DeGrand has only one time per every month
   mapping(uint256 => DeGrandPrize) private _deGrandPrizes;
   // <lotteryId, DeGrandWinner[]>
   mapping(uint256 => DeGrandWinner[]) private _deGrandWinners;
@@ -90,7 +91,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
   );
   event PickDeGrandWinners(
     uint256 indexed lotteryId,
-    uint256 deGrandMonth,
+    uint256 drawTime,
     uint256 maxWinnerCount,
     uint256 finalNumber
   );
@@ -284,7 +285,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
   /**
    * @notice View DeGrand prize
-   * @param _timestamp timestamp to get month index
+   * @param _timestamp draw timestamp to get month index
    * @dev Callable by users
    */
   function viewDeGrandPrize(uint256 _timestamp)
@@ -293,7 +294,6 @@ contract SpecialLottery is DeHubLotterysAbstract {
     returns (DeGrandPrize memory)
   {
     uint256 deGrandMonth = _timestamp / 2629800; // 2629800 is a month in seconds
-
     return _deGrandPrizes[deGrandMonth];
   }
 
@@ -307,14 +307,13 @@ contract SpecialLottery is DeHubLotterysAbstract {
     view
     returns (DeGrandPrize memory)
   {
-    uint256 endTime = _lotteries[_lotteryId].startTime;
-    uint256 deGrandMonth = endTime / 2629800; // 2629800 is a month in seconds
+    uint256 deGrandMonth = _lotteries[_lotteryId].startTime / 2629800; // 2629800 is a month in seconds
     return _deGrandPrizes[deGrandMonth];
   }
 
   /**
    * @notice Set DeGrand Prize
-   * @param _timestamp timestamp to get month index
+   * @param _timestamp draw timestamp to get month index
    * @param _title Prize title
    * @param _subtitle Prize subtitle
    * @param _description Prize description
@@ -338,7 +337,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
     uint256 deGrandMonth = _timestamp / 2629800; // 2629800 is a month in seconds
     _deGrandPrizes[deGrandMonth] = DeGrandPrize({
-      deGrandMonth: deGrandMonth,
+      drawTime: _timestamp,
       title: _title,
       subtitle: _subtitle,
       description: _description,
@@ -368,7 +367,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
     uint256 deGrandMonth = _lotteries[_lotteryId].startTime / 2629800; // 2629800 is a month in seconds
     require(
-      deGrandMonth == _deGrandPrizes[deGrandMonth].deGrandMonth,
+      _deGrandPrizes[deGrandMonth].drawTime > 0,
       "DeGrand Prize was not set"
     );
     uint256 maxWinnerCount = _deGrandPrizes[deGrandMonth].maxWinnerCount;
@@ -409,7 +408,12 @@ contract SpecialLottery is DeHubLotterysAbstract {
     _lotteries[_lotteryId].deGrandFinalNumber = finalNumber; // TODO, will be removed on mainnet
     _lotteries[_lotteryId].deGrandStatus = Status.Claimable;
 
-    emit PickDeGrandWinners(_lotteryId, deGrandMonth, maxWinnerCount, finalNumber);
+    emit PickDeGrandWinners(
+      _lotteryId,
+      _deGrandPrizes[deGrandMonth].drawTime,
+      maxWinnerCount,
+      finalNumber
+    );
   }
 
   /**
