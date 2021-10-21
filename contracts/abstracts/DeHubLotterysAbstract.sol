@@ -28,7 +28,7 @@ abstract contract DeHubLotterysAbstract is
     0x000000000000000000000000000000000000dEaD;
 
   uint256 public currentLotteryId;
-  uint256 public currentTicketId;
+  uint256 public currentTicketId; // Ticket Id starts from 1
   uint256 public unwonPreviousPot; // Unwon prize pot in previous round
 
   uint256 public maxNumberTicketsPerBuyOrClaim;

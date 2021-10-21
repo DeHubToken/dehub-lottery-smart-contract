@@ -58,7 +58,7 @@ contract StandardLottery is DeHubLotterysAbstract {
   uint256 public constant MIN_LENGTH_LOTTERY = 6 hours - 5 minutes; // 6 hours
   uint256 public constant MAX_LENGTH_LOTTERY = 6 hours + 5 minutes; // 6 hours
 
-  uint256 public constant MAX_BUNDLE_RULES = 5;
+  uint256 public constant MAX_BUNDLE_RULES = 100;
 
   modifier onlyOperator() {
     require(msg.sender == operatorAddress, "Operator is required");
@@ -99,6 +99,10 @@ contract StandardLottery is DeHubLotterysAbstract {
     IDeHubRand _randomGenerator
   ) public initializer {
     DeHubLotterysUpgradeable.initialize();
+
+    currentLotteryId = 0;
+    currentTicketId = 1;
+    unwonPreviousPot = 0;
 
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;

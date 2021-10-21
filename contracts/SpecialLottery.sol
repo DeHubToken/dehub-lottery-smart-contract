@@ -112,6 +112,10 @@ contract SpecialLottery is DeHubLotterysAbstract {
   ) public initializer {
     DeHubLotterysUpgradeable.initialize();
 
+    currentLotteryId = 0;
+    currentTicketId = 1;
+    unwonPreviousPot = 0;
+
     dehubToken = _dehubToken;
     randomGenerator = _randomGenerator;
 
