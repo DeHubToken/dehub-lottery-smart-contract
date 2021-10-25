@@ -92,6 +92,10 @@ contract StandardLottery is DeHubLotterysAbstract {
     uint256 indexed lotteryId,
     uint256 numberTickets
   );
+  event IncreasePot(
+    uint256 indexed lotteryId,
+    uint256 amount
+  );
 
   function __StandardLottery_init(
     IERC20Upgradeable _dehubToken,
@@ -460,6 +464,37 @@ contract StandardLottery is DeHubLotterysAbstract {
     _lotteries[currentLotteryId].status = Status.Burned;
     // After burning, start from zero, need to make previous pot zero
     unwonPreviousPot = 0;
+  }
+
+  /**
+   * @notice Increase pot by DeHub team
+   * @param _lotteryId lottery id
+   * @param _amount amount to increase pot
+   * @dev Callable by owner
+   */
+  function increasePot(
+    uint256 _lotteryId,
+    uint256 _amount
+  )
+    external
+    nonReentrant
+    whenNotPaused
+    onlyOwner
+  {
+    require(
+      _lotteries[_lotteryId].status == Status.Open,
+      "Lottery is not open"
+    );
+
+    dehubToken.safeTransferFrom(
+      address(msg.sender),
+      address(this),
+      _amount
+    );
+
+    _lotteries[_lotteryId].amountCollectedToken += _amount;
+
+    emit IncreasePot(_lotteryId, _amount);
   }
 
   /**

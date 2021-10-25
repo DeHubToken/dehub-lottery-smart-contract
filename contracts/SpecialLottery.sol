@@ -106,6 +106,10 @@ contract SpecialLottery is DeHubLotterysAbstract {
     uint256 indexed lotteryId,
     uint256 numberTickets
   );
+  event IncreasePot(
+    uint256 indexed lotteryId,
+    uint256 amount
+  );
 
   function __SpecialLottery_init(
     IERC20Upgradeable _dehubToken,
@@ -523,6 +527,37 @@ contract SpecialLottery is DeHubLotterysAbstract {
       currentTicketId,
       unwonPreviousPot
     );
+  }
+
+  /**
+   * @notice Increase pot by DeHub team
+   * @param _lotteryId lottery id
+   * @param _amount amount to increase pot
+   * @dev Callable by owner
+   */
+  function increasePot(
+    uint256 _lotteryId,
+    uint256 _amount
+  )
+    external
+    nonReentrant
+    whenNotPaused
+    onlyOwner
+  {
+    require(
+      _lotteries[_lotteryId].deLottoStatus == Status.Open,
+      "Lottery is not open"
+    );
+
+    dehubToken.safeTransferFrom(
+      address(msg.sender),
+      address(this),
+      _amount
+    );
+
+    _lotteries[_lotteryId].amountCollectedToken += _amount;
+
+    emit IncreasePot(_lotteryId, _amount);
   }
 
   /**
