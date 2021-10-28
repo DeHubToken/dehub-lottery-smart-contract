@@ -35,6 +35,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     string ctaUrl; // URL link to more info (optional)
     string imageUrl; // URL link to a graphic image (optional)
     uint256 maxWinnerCount; // how many users will get this prize
+    bool picked; // If picked, true
   }
 
   struct DeGrandWinner {
@@ -88,6 +89,15 @@ contract SpecialLottery is DeHubLotterysAbstract {
     uint256 indexed lotteryId,
     uint256 maxPickedCount,
     uint256 finalNumber
+  );
+  event SetDeGrandPrize(
+    uint256 monthIndex,
+    string title,
+    string subtitle,
+    uint256 maxNumberDeGrandWinners
+  );
+  event RemoveDeGrandPrize(
+    uint256 monthIndex
   );
   event PickDeGrandWinners(
     uint256 indexed lotteryId,
@@ -343,6 +353,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     string memory _imageUrl,
     uint256 _maxNumberDeGrandWinners
   ) external onlyOwner {
+    require(_timestamp > block.timestamp, "Wrong draw time");
     require(_maxNumberDeGrandWinners < 128, "Maximum limit of winners is 128");
     require(bytes(_title).length > 0, "Empty prize title");
 
@@ -354,8 +365,35 @@ contract SpecialLottery is DeHubLotterysAbstract {
       description: _description,
       ctaUrl: _ctaUrl,
       imageUrl: _imageUrl,
-      maxWinnerCount: _maxNumberDeGrandWinners
+      maxWinnerCount: _maxNumberDeGrandWinners,
+      picked: false
     });
+
+    emit SetDeGrandPrize(
+      deGrandMonth,
+      _title,
+      _subtitle,
+      _maxNumberDeGrandWinners
+    );
+  }
+
+  /**
+   * @notice Remove DeGrand prize, do not allow to remove after draw.
+   * @param _timestamp draw timestamp to get month index
+   * @dev Callable by operator
+   */
+  function removeDeGrandPrize(uint256 _timestamp) external onlyOwner {
+    uint256 deGrandMonth = _timestamp / 2629800; // 2629800 is a month in seconds
+    require(
+      _deGrandPrizes[deGrandMonth].drawTime > 0,
+      "DeGrand Prize was not set"
+    );
+    require(
+      !_deGrandPrizes[deGrandMonth].picked,
+      "DeGrand Prize already picked"
+    );
+
+    delete _deGrandPrizes[deGrandMonth];
   }
 
   /**
@@ -380,6 +418,10 @@ contract SpecialLottery is DeHubLotterysAbstract {
     require(
       _deGrandPrizes[deGrandMonth].drawTime > 0,
       "DeGrand Prize was not set"
+    );
+    require(
+      !_deGrandPrizes[deGrandMonth].picked,
+      "DeGrand Prize already picked"
     );
     uint256 maxWinnerCount = _deGrandPrizes[deGrandMonth].maxWinnerCount;
     require(
@@ -418,6 +460,9 @@ contract SpecialLottery is DeHubLotterysAbstract {
     _lotteries[_lotteryId].deGrandMaximumWinners = maxWinnerCount;
     _lotteries[_lotteryId].deGrandFinalNumber = finalNumber; // TODO, will be removed on mainnet
     _lotteries[_lotteryId].deGrandStatus = Status.Claimable;
+
+    // Update picked status for DeGrandPrize
+    _deGrandPrizes[deGrandMonth].picked = true;
 
     emit PickDeGrandWinners(
       _lotteryId,
