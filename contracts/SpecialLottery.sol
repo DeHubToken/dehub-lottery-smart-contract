@@ -497,7 +497,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
     uint256 ticketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
       _lotteries[_lotteryId].firstTicketId;
-    if (ticketCount < MAX_DELOTTO_SECOND_TICKETS) {
+    if (ticketCount <= MAX_DELOTTO_SECOND_TICKETS) {
       emit PickAwardWinners(_lotteryId, ticketCount, 0);
       return;
     }
@@ -737,7 +737,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     uint256 lotteryTicketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
       _lotteries[_lotteryId].firstTicketId;
 
-    if (lotteryTicketCount >= MAX_DELOTTO_SECOND_TICKETS) {
+    if (lotteryTicketCount > MAX_DELOTTO_SECOND_TICKETS) {
       for (uint256 i = 0; i < ticketCount; i++) {
         winnings[i] = _deLottoWinnerTicketIds[_lotteryId][_ticketIds[i]];
       }
@@ -862,7 +862,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
       _lotteries[_lotteryId].amountCollectedToken;
 
     // DeLotto second stage
-    if (ticketCount >= MAX_DELOTTO_SECOND_TICKETS) {
+    if (ticketCount > MAX_DELOTTO_SECOND_TICKETS) {
       // If bought over 100 tickets, pick randomly 100 tickets
       if (_deLottoWinnerTicketIds[_lotteryId][_ticketId]) {
         // every ticket has 1% of unwon pot
