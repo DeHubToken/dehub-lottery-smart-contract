@@ -96,9 +96,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     string subtitle,
     uint256 maxNumberDeGrandWinners
   );
-  event RemoveDeGrandPrize(
-    uint256 monthIndex
-  );
+  event RemoveDeGrandPrize(uint256 monthIndex);
   event PickDeGrandWinners(
     uint256 indexed lotteryId,
     uint256 drawTime,
@@ -116,10 +114,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     uint256 indexed lotteryId,
     uint256 numberTickets
   );
-  event IncreasePot(
-    uint256 indexed lotteryId,
-    uint256 amount
-  );
+  event IncreasePot(uint256 indexed lotteryId, uint256 amount);
 
   function __SpecialLottery_init(
     IERC20Upgradeable _dehubToken,
@@ -138,8 +133,8 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
     maxNumberTicketsPerBuyOrClaim = 100;
 
-    maxPriceTicketInDehub = 50000 * (10 ** 5);
-    minPriceTicketInDehub = 1000 * (10 ** 5);
+    maxPriceTicketInDehub = 50000 * (10**5);
+    minPriceTicketInDehub = 1000 * (10**5);
 
     breakDownDeLottoPot = 7000; // 70%
     breakDownTeamWallet = 2000; // 20%
@@ -288,7 +283,10 @@ contract SpecialLottery is DeHubLotterysAbstract {
     nonReentrant
     whenNotPaused
   {
-    require(_lotteries[_lotteryId].deLottoStatus == Status.Open, "Lottery not open");
+    require(
+      _lotteries[_lotteryId].deLottoStatus == Status.Open,
+      "Lottery not open"
+    );
     require(
       block.timestamp >= _lotteries[_lotteryId].endTime,
       "Lottery not over"
@@ -401,9 +399,12 @@ contract SpecialLottery is DeHubLotterysAbstract {
    * @param _lotteryId lottery id
    * @dev Callable by operator
    */
-  function pickDeGrandWinners(
-    uint256 _lotteryId
-  ) external onlyOwner nonReentrant whenNotPaused {
+  function pickDeGrandWinners(uint256 _lotteryId)
+    external
+    onlyOwner
+    nonReentrant
+    whenNotPaused
+  {
     require(
       _lotteries[_lotteryId].deGrandStatus == Status.Close ||
         _lotteries[_lotteryId].deGrandStatus == Status.Claimable,
@@ -431,7 +432,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     require(
       maxWinnerCount <=
         _lotteries[_lotteryId].firstTicketIdNextLottery -
-        _lotteries[_lotteryId].firstTicketId,
+          _lotteries[_lotteryId].firstTicketId,
       "Picking more than tickets total!"
     );
 
@@ -458,7 +459,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
     // Update internal statuses for lottery
     _lotteries[_lotteryId].deGrandMaximumWinners = maxWinnerCount;
-    _lotteries[_lotteryId].deGrandFinalNumber = finalNumber; // TODO, will be removed on mainnet
+    _lotteries[_lotteryId].deGrandFinalNumber = finalNumber;
     _lotteries[_lotteryId].deGrandStatus = Status.Claimable;
 
     // Update picked status for DeGrandPrize
@@ -518,7 +519,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
     }
 
     // Update internal statuses for lottery
-    _lotteries[_lotteryId].deLottoFinalNumber = finalNumber; // TODO, will be removed on mainnet
+    _lotteries[_lotteryId].deLottoFinalNumber = finalNumber;
 
     emit PickAwardWinners(_lotteryId, MAX_DELOTTO_SECOND_TICKETS, finalNumber);
   }
@@ -559,9 +560,9 @@ contract SpecialLottery is DeHubLotterysAbstract {
       amountCollectedToken: 0,
       firstTicketId: currentTicketId,
       firstTicketIdNextLottery: currentTicketId,
-      deGrandFinalNumber: 0, // TODO, will be removed on mainnet
+      deGrandFinalNumber: 0,
       deGrandMaximumWinners: 0,
-      deLottoFinalNumber: 0 // TODO, will be removed on mainnet
+      deLottoFinalNumber: 0
     });
 
     emit LotteryOpen(
@@ -580,10 +581,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
    * @param _amount amount to increase pot
    * @dev Callable by owner
    */
-  function increasePot(
-    uint256 _lotteryId,
-    uint256 _amount
-  )
+  function increasePot(uint256 _lotteryId, uint256 _amount)
     external
     nonReentrant
     whenNotPaused
@@ -594,11 +592,7 @@ contract SpecialLottery is DeHubLotterysAbstract {
       "Lottery is not open"
     );
 
-    dehubToken.safeTransferFrom(
-      address(msg.sender),
-      address(this),
-      _amount
-    );
+    dehubToken.safeTransferFrom(address(msg.sender), address(this), _amount);
 
     _lotteries[_lotteryId].amountCollectedToken += _amount;
 
@@ -650,7 +644,10 @@ contract SpecialLottery is DeHubLotterysAbstract {
    * @param _address DeLotto address
    * @dev Callable by owner
    */
-  function setDeLottoAddress(DeHubLotterysAbstract _address) external onlyOwner {
+  function setDeLottoAddress(DeHubLotterysAbstract _address)
+    external
+    onlyOwner
+  {
     deLottoAddress = _address;
   }
 
@@ -734,14 +731,15 @@ contract SpecialLottery is DeHubLotterysAbstract {
 
     bool[] memory winnings = new bool[](ticketCount);
 
-    uint256 lotteryTicketCount = _lotteries[_lotteryId].firstTicketIdNextLottery -
-      _lotteries[_lotteryId].firstTicketId;
+    uint256 lotteryTicketCount = _lotteries[_lotteryId]
+      .firstTicketIdNextLottery - _lotteries[_lotteryId].firstTicketId;
 
     if (lotteryTicketCount > MAX_DELOTTO_SECOND_TICKETS) {
       for (uint256 i = 0; i < ticketCount; i++) {
         winnings[i] = _deLottoWinnerTicketIds[_lotteryId][_ticketIds[i]];
       }
-    } else { // not exceeded 100, all the tickets are winning tickets.
+    } else {
+      // not exceeded 100, all the tickets are winning tickets.
       for (uint256 i = 0; i < ticketCount; i++) {
         winnings[i] = true;
       }
