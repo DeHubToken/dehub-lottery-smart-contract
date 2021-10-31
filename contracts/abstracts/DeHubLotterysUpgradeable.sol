@@ -25,6 +25,7 @@ abstract contract DeHubLotterysUpgradeable is
 
 	uint public version;
 
+	/// @custom:oz-upgrades-unsafe-allow constructor
 	function initialize() public initializer {
 		__Ownable_init();
 		__ReentrancyGuard_init();
