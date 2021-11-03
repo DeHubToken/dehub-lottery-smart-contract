@@ -17,15 +17,6 @@ const addresses = {
   },
 };
 
-const chainLinkAddress = {
-  testnet: {
-    vrfCoordinator: "0xa555fC018435bef5A13C6c6870a9d4C11DEC329C",
-    link: "0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06",
-    keyHash:
-      "0xcaf3c3727e033261d383b315559476f48034c13b18f8cafed4d871abe5049186",
-  },
-};
-
 let totalGas = 0;
 const countTotalGas = async (tx) => {
   let res = tx;
@@ -119,8 +110,8 @@ async function main() {
     console.log(
       `Set operator of StandardLottery: ${process.env.OPERATOR_ADDRESS}`
     );
-    await standardUpgrades.setDeGrandAddress(specialUpgrades.address);
-    console.log(`Set DeGrand of StandardLottery: ${specialUpgrades.address}`);
+    await standardUpgrades.setDeGrandAddress(process.env.DEGRAND_WALLET);
+    console.log(`Set DeGrand of StandardLottery: ${process.env.DEGRAND_WALLET}`);
     await standardUpgrades.setTeamWallet(process.env.TEAM_WALLET);
     console.log(
       `Set team wallet of StandardLottery: ${process.env.TEAM_WALLET}`

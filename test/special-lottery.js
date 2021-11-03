@@ -21,6 +21,10 @@ describe("SpecialLottery", () => {
       "StandardLottery",
       admin
     );
+    const StandardLotteryV2 = await ethers.getContractFactory(
+      "StandardLotteryV2",
+      admin
+    );
     const SpecialLottery = await ethers.getContractFactory(
       "SpecialLottery",
       admin
@@ -34,7 +38,7 @@ describe("SpecialLottery", () => {
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
-    this.standardLottery = await upgrades.deployProxy(
+    this.standardLotteryV1 = await upgrades.deployProxy(
       StandardLottery,
       [this.dehubToken.address, this.dehubRandom.address],
       {
@@ -42,7 +46,12 @@ describe("SpecialLottery", () => {
         initializer: "__StandardLottery_init",
       }
     );
-    await this.standardLottery.deployed();
+    await this.standardLotteryV1.deployed();
+    this.standardLottery = await upgrades.upgradeProxy(
+      this.standardLotteryV1.address,
+      StandardLotteryV2
+    );
+    this.standardLottery.upgradeToV2();
     this.specialLottery = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -69,7 +78,7 @@ describe("SpecialLottery", () => {
     /// Initialize Lottery
     // Set operator address
     await this.specialLottery.setOperatorAddress(operator.address);
-    // Set DeGrand address
+    // Set DeLotto address
     await this.specialLottery.setDeLottoAddress(this.standardLottery.address);
     // Set team address
     await this.specialLottery.setTeamWallet(operator.address);
@@ -241,7 +250,7 @@ describe("SpecialLottery", () => {
     it("pick degrand stage", async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      const timestamp = Math.floor(new Date().getTime() / 1000);
+      const timestamp = await now() + 600;
       await this.specialLottery.setDeGrandPrize(
         timestamp,
         "iPhone 13", // title
