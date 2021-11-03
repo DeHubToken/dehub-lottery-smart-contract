@@ -44,6 +44,8 @@ async function main() {
       standardLotteryV1,
       StandardLotteryV2
     );
+    await standardUpgrades.deployed();
+    await standardUpgrades.upgradeToV2();
 
     await countTotalGas(standardUpgrades);
     console.log("Deployed StandardLotteryV2 contracts", { totalGas });
