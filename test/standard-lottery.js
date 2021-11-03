@@ -12,18 +12,22 @@ describe("StandardLottery", () => {
   const DEHUB_PRICE = 50000 * 100000;
   const SIX_HOUR = 3600 * 6;
 
-  let admin, operator, alpha, beta, gamma;
+  let admin, operator, degrand, alpha, beta, gamma;
   let addrs;
 
   let lotteryStartTime, lotteryEndTime;
 
   beforeEach(async () => {
-    [admin, operator, alpha, beta, gamma, ...addrs] = await ethers.getSigners();
+    [admin, operator, degrand, alpha, beta, gamma, ...addrs] = await ethers.getSigners();
 
     const DehubToken = await ethers.getContractFactory("MockERC20", admin);
     const DehubRandom = await ethers.getContractFactory("MockDehubRand", admin);
-    const StandardLottery = await ethers.getContractFactory(
+    const StandardLotteryV1 = await ethers.getContractFactory(
       "StandardLottery",
+      admin
+    );
+    const StandardLotteryV2 = await ethers.getContractFactory(
+      "StandardLotteryV2",
       admin
     );
     const SpecialLottery = await ethers.getContractFactory(
@@ -39,15 +43,20 @@ describe("StandardLottery", () => {
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
-    this.standardLottery = await upgrades.deployProxy(
-      StandardLottery,
+    this.standardLotteryV1 = await upgrades.deployProxy(
+      StandardLotteryV1,
       [this.dehubToken.address, this.dehubRandom.address],
       {
         kind: "uups",
         initializer: "__StandardLottery_init",
       }
     );
-    await this.standardLottery.deployed();
+    await this.standardLotteryV1.deployed();
+    this.standardLottery = await upgrades.upgradeProxy(
+      this.standardLotteryV1.address,
+      StandardLotteryV2
+    );
+    this.standardLottery.upgradeToV2();
     this.specialLottery = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -75,7 +84,7 @@ describe("StandardLottery", () => {
     // Set operator address
     await this.standardLottery.setOperatorAddress(operator.address);
     // Set DeGrand address
-    await this.standardLottery.setDeGrandAddress(this.specialLottery.address);
+    await this.standardLottery.setDeGrandAddress(degrand.address);
     // Set team address
     await this.standardLottery.setTeamWallet(operator.address);
     // Set breakdown percent
@@ -126,7 +135,7 @@ describe("StandardLottery", () => {
       this.standardLottery.address
     );
     const deGrandInitBalance = await this.dehubToken.balanceOf(
-      this.specialLottery.address
+      degrand.address
     );
     const operatorInitBalance = await this.dehubToken.balanceOf(
       operator.address
@@ -187,7 +196,7 @@ describe("StandardLottery", () => {
         deLottoInitBalance
     ).to.equal(totalTransferAmount / 2); // 50%
     expect(
-      (await this.dehubToken.balanceOf(this.specialLottery.address)) -
+      (await this.dehubToken.balanceOf(degrand.address)) -
         deGrandInitBalance
     ).to.equal((totalTransferAmount * 3) / 10); // 30%
     expect(
