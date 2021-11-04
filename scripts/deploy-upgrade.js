@@ -24,7 +24,14 @@ const countTotalGas = async (tx) => {
 };
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  // Find deployer signer in signers.
+  let deployer;
+  signers.forEach((a) => {
+    if (a.address === process.env.DEPLOYER001) {
+      deployer = a;
+    }
+  });
   if (!deployer) {
     throw new Error(`${process.env.DEPLOYER001} not found in signers!`);
   }
@@ -35,11 +42,13 @@ async function main() {
   if (network.name === "testnet" || network.name === "mainnet") {
     const standardLotteryV1 =
       network.name === "testnet"
-      ? manifestInTestnet.proxies[0].address
-      : manifestInMainnet.proxies[0].address;
+        ? manifestInTestnet.proxies[0].address
+        : manifestInMainnet.proxies[0].address;
 
     // We get the contract to deploy
-    const StandardLotteryV2 = await ethers.getContractFactory("StandardLotteryV2");
+    const StandardLotteryV2 = await ethers.getContractFactory(
+      "StandardLotteryV2"
+    );
     const standardUpgrades = await upgrades.upgradeProxy(
       standardLotteryV1,
       StandardLotteryV2

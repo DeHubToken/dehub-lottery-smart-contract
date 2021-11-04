@@ -9,7 +9,7 @@ const { NomicLabsHardhatPluginError } = require("hardhat/plugins");
 const addresses = {
   mainnet: {
     dehub: "0xFC206f429d55c71cb7294EfF40c6ADb20dC21508",
-    randomGenerator: "",
+    randomGenerator: "0xd441586CeE8839C306aF40cae990D9f580bf1B64",
   },
   testnet: {
     dehub: "0x5A5e32fE118E7c7b6536d143F446269123c0ba74",
@@ -27,7 +27,14 @@ const countTotalGas = async (tx) => {
 };
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  // Find deployer signer in signers.
+  let deployer;
+  signers.forEach((a) => {
+    if (a.address === process.env.DEPLOYER001) {
+      deployer = a;
+    }
+  });
   if (!deployer) {
     throw new Error(`${process.env.DEPLOYER001} not found in signers!`);
   }

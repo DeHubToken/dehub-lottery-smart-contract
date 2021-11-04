@@ -7,8 +7,8 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "./abstracts/DeHubLotterysAbstract.sol";
 
 /**
-* @dev V2 upgrade template. Use this if update is needed in the future.
-*/
+ * @dev V2 upgrade template. Use this if update is needed in the future.
+ */
 contract StandardLotteryV2 is DeHubLotterysAbstract {
   using SafeMathUpgradeable for uint256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -69,7 +69,7 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
     require(msg.sender == operatorAddress, "Operator is required");
     _;
   }
-  
+
   event LotteryOpen(
     uint256 indexed lotteryId,
     uint256 startTime,
@@ -98,10 +98,7 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
     uint256 indexed lotteryId,
     uint256 numberTickets
   );
-  event IncreasePot(
-    uint256 indexed lotteryId,
-    uint256 amount
-  );
+  event IncreasePot(uint256 indexed lotteryId, uint256 amount);
 
   function __StandardLottery_init(
     IERC20Upgradeable _dehubToken,
@@ -120,8 +117,8 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
 
     maxNumberTicketsPerBuyOrClaim = 100;
 
-    maxPriceTicketInDehub = 50000 * (10 ** 5);
-    minPriceTicketInDehub = 1000 * (10 ** 5);
+    maxPriceTicketInDehub = 50000 * (10**5);
+    minPriceTicketInDehub = 1000 * (10**5);
 
     breakDownDeLottoPot = 5000; // 50%
     breakDownDeGrandPot = 3000; // 30%
@@ -208,7 +205,10 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
     for (uint256 i = 0; i < _ticketNumbers.length; i++) {
       uint256 ticketNumber = _ticketNumbers[i];
 
-      require(ticketNumber >= 100000000 && ticketNumber <= 118181818, "Outside range");
+      require(
+        ticketNumber >= 100000000 && ticketNumber <= 118181818,
+        "Outside range"
+      );
 
       _numberTicketsPerLotteryId[_lotteryId][11 + (ticketNumber % 100)]++;
       _numberTicketsPerLotteryId[_lotteryId][1111 + (ticketNumber % 10000)]++;
@@ -401,10 +401,8 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
   ) external onlyOperator whenNotPaused {
     require(
       (currentLotteryId == 0) ||
-        (
-          _lotteries[currentLotteryId].status == Status.Claimable ||
-          _lotteries[currentLotteryId].status == Status.Burned
-        ),
+        (_lotteries[currentLotteryId].status == Status.Claimable ||
+          _lotteries[currentLotteryId].status == Status.Burned),
       "Not time to start lottery"
     );
     require(
@@ -478,10 +476,7 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
    * @param _amount amount to increase pot
    * @dev Callable by owner
    */
-  function increasePot(
-    uint256 _lotteryId,
-    uint256 _amount
-  )
+  function increasePot(uint256 _lotteryId, uint256 _amount)
     external
     nonReentrant
     whenNotPaused
@@ -492,11 +487,7 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
       "Lottery is not open"
     );
 
-    dehubToken.safeTransferFrom(
-      address(msg.sender),
-      address(this),
-      _amount
-    );
+    dehubToken.safeTransferFrom(address(msg.sender), address(this), _amount);
 
     _lotteries[_lotteryId].amountCollectedToken += _amount;
 
@@ -732,9 +723,8 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
     uint256 finalNumber = 0;
     for (uint256 i = 4; i >= 1; i--) {
       // Make every two numbers from 1 to 18
-      uint256 digits = ((randomNumber % (uint256(100) ** i)) / (
-        uint256(100) ** (i - 1)
-      )) % 18 + 1;
+      uint256 digits = (((randomNumber % (uint256(100)**i)) /
+        (uint256(100)**(i - 1))) % 18) + 1;
       finalNumber = finalNumber * 100 + digits;
     }
     return finalNumber + 100000000;
@@ -785,18 +775,18 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
     return _ticketRate * _ticketCount;
   }
 
-	/**
-	* @dev Must call this jsut after the upgrade deployement, to update state 
-	* variables and execute other upgrade logic.
-	* Ref: https://github.com/OpenZeppelin/openzeppelin-upgrades/issues/62
-	*/
-	function upgradeToV2() public {
-		require(version < 2, "StandardLottery: Already upgraded to version 2");
-		version = 2;
-		console.log('v', version);
-		minLengthLottery = 10 minutes;
+  /**
+   * @dev Must call this jsut after the upgrade deployement, to update state
+   * variables and execute other upgrade logic.
+   * Ref: https://github.com/OpenZeppelin/openzeppelin-upgrades/issues/62
+   */
+  function upgradeToV2() public {
+    require(version < 2, "StandardLottery: Already upgraded to version 2");
+    version = 2;
+    console.log("v", version);
+    minLengthLottery = 10 minutes;
     maxLengthLottery = 3 days;
-	}
+  }
 
   /**
    * @notice Set maximum/minumum length of lottery round
@@ -804,12 +794,13 @@ contract StandardLotteryV2 is DeHubLotterysAbstract {
    * @param _maxLength maximum time length
    * @dev Callable by Owner
    */
-  function setLotteryRoundLength(
-    uint256 _minLength,
-    uint256 _maxLength
-  ) external onlyOwner {
+  function setLotteryRoundLength(uint256 _minLength, uint256 _maxLength)
+    external
+    onlyOwner
+  {
     require(
-      _minLength > 1 minutes && _minLength < _maxLength &&
+      _minLength > 1 minutes &&
+        _minLength < _maxLength &&
         (_maxLength - _minLength >= 6 hours),
       "Round length must over 6 hours"
     );

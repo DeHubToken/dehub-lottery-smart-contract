@@ -55,8 +55,8 @@ module.exports = {
       chainId: 56,
       gasPrice: 20000000000,
       accounts:
-        process.env.MNEMONIC !== undefined
-          ? { mnemonic: process.env.MNEMONIC }
+        process.env.DEPLOYER001_PRIVATE_KEY !== undefined
+          ? [process.env.DEPLOYER001_PRIVATE_KEY]
           : [],
     },
     hardhat: {
