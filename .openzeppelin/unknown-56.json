@@ -171,7 +171,7 @@
           {
             "contract": "DeHubLotterysAbstract",
             "label": "randomGenerator",
-            "type": "t_contract(IDeHubRand)6292",
+            "type": "t_contract(IDeHubRand)8287",
             "src": "contracts/abstracts/DeHubLotterysAbstract.sol:46"
           },
           {
@@ -254,7 +254,7 @@
             "members": [
               {
                 "label": "status",
-                "type": "t_enum(Status)5974"
+                "type": "t_enum(Status)7969"
               },
               {
                 "label": "startTime",
@@ -302,7 +302,7 @@
               }
             ]
           },
-          "t_enum(Status)5974": {
+          "t_enum(Status)7969": {
             "label": "enum DeHubLotterysAbstract.Status",
             "members": [
               "Pending",
@@ -349,7 +349,7 @@
           "t_contract(IERC20Upgradeable)938": {
             "label": "contract IERC20Upgradeable"
           },
-          "t_contract(IDeHubRand)6292": {
+          "t_contract(IDeHubRand)8287": {
             "label": "contract IDeHubRand"
           },
           "t_array(t_uint256)50_storage": {
@@ -753,6 +753,369 @@
           },
           "t_array(t_uint256)50_storage": {
             "label": "uint256[50]"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          }
+        }
+      }
+    },
+    "660ac3cbc7715585c040ebb930ea5c3341ec5fd10c00e4e7be371cfa08fc9562": {
+      "address": "0x2E67f7d87Fe478673f3Eb74e2b844e7e1388cfFD",
+      "txHash": "0x3aac8c8726acc7878c58f3be172226b6007ef61d7eb06878a6757c31b13283bf",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:21"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:26"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:30"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:21"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:77"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "_status",
+            "type": "t_uint256",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:37"
+          },
+          {
+            "contract": "ReentrancyGuardUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:67"
+          },
+          {
+            "contract": "PausableUpgradeable",
+            "label": "_paused",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:28"
+          },
+          {
+            "contract": "PausableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:96"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:214"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:80"
+          },
+          {
+            "contract": "DeHubLotterysUpgradeable",
+            "label": "version",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysUpgradeable.sol:26"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "transfererAddress",
+            "type": "t_address",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:25"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "teamWallet",
+            "type": "t_address",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:26"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "currentLotteryId",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:30"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "currentTicketId",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:31"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "unwonPreviousPot",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:32"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "maxNumberTicketsPerBuyOrClaim",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:34"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "maxPriceTicketInDehub",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:36"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "minPriceTicketInDehub",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:37"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "breakDownDeLottoPot",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:39"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "breakDownDeGrandPot",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:40"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "breakDownTeamWallet",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:41"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "breakDownBurn",
+            "type": "t_uint256",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:42"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "dehubToken",
+            "type": "t_contract(IERC20Upgradeable)938",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:44"
+          },
+          {
+            "contract": "DeHubLotterysAbstract",
+            "label": "randomGenerator",
+            "type": "t_contract(IDeHubRand)8287",
+            "src": "contracts/abstracts/DeHubLotterysAbstract.sol:46"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "operatorAddress",
+            "type": "t_address",
+            "src": "contracts/StandardLotteryV2.sol:42"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "deGrandAddress",
+            "type": "t_address",
+            "src": "contracts/StandardLotteryV2.sol:43"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "bundleRules",
+            "type": "t_array(t_struct(BundleRule)6012_storage)dyn_storage",
+            "src": "contracts/StandardLotteryV2.sol:45"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "_lotteries",
+            "type": "t_mapping(t_uint256,t_struct(Lottery)6002_storage)",
+            "src": "contracts/StandardLotteryV2.sol:48"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "_tickets",
+            "type": "t_mapping(t_uint256,t_struct(Ticket)6007_storage)",
+            "src": "contracts/StandardLotteryV2.sol:50"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "_bracketCalculator",
+            "type": "t_mapping(t_uint256,t_uint256)",
+            "src": "contracts/StandardLotteryV2.sol:52"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "_numberTicketsPerLotteryId",
+            "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_uint256))",
+            "src": "contracts/StandardLotteryV2.sol:54"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "_userTicketIdsPerLotteryId",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_array(t_uint256)dyn_storage))",
+            "src": "contracts/StandardLotteryV2.sol:57"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "minLengthLottery",
+            "type": "t_uint256",
+            "src": "contracts/StandardLotteryV2.sol:60"
+          },
+          {
+            "contract": "StandardLotteryV2",
+            "label": "maxLengthLottery",
+            "type": "t_uint256",
+            "src": "contracts/StandardLotteryV2.sol:61"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_struct(BundleRule)6012_storage)dyn_storage": {
+            "label": "struct StandardLotteryV2.BundleRule[]"
+          },
+          "t_struct(BundleRule)6012_storage": {
+            "label": "struct StandardLotteryV2.BundleRule",
+            "members": [
+              {
+                "label": "purchasedTickets",
+                "type": "t_uint256"
+              },
+              {
+                "label": "freeTickets",
+                "type": "t_uint256"
+              }
+            ]
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_uint256,t_struct(Lottery)6002_storage)": {
+            "label": "mapping(uint256 => struct StandardLotteryV2.Lottery)"
+          },
+          "t_struct(Lottery)6002_storage": {
+            "label": "struct StandardLotteryV2.Lottery",
+            "members": [
+              {
+                "label": "status",
+                "type": "t_enum(Status)7969"
+              },
+              {
+                "label": "startTime",
+                "type": "t_uint256"
+              },
+              {
+                "label": "endTime",
+                "type": "t_uint256"
+              },
+              {
+                "label": "ticketRate",
+                "type": "t_uint256"
+              },
+              {
+                "label": "rewardBreakdown",
+                "type": "t_array(t_uint256)4_storage"
+              },
+              {
+                "label": "countWinnersPerBracket",
+                "type": "t_array(t_uint256)4_storage"
+              },
+              {
+                "label": "tokenPerBracket",
+                "type": "t_array(t_uint256)4_storage"
+              },
+              {
+                "label": "unwonPreviousPot",
+                "type": "t_uint256"
+              },
+              {
+                "label": "amountCollectedToken",
+                "type": "t_uint256"
+              },
+              {
+                "label": "firstTicketId",
+                "type": "t_uint256"
+              },
+              {
+                "label": "firstTicketIdNextLottery",
+                "type": "t_uint256"
+              },
+              {
+                "label": "finalNumber",
+                "type": "t_uint256"
+              }
+            ]
+          },
+          "t_enum(Status)7969": {
+            "label": "enum DeHubLotterysAbstract.Status",
+            "members": [
+              "Pending",
+              "Open",
+              "Close",
+              "Claimable",
+              "Burned"
+            ]
+          },
+          "t_array(t_uint256)4_storage": {
+            "label": "uint256[4]"
+          },
+          "t_mapping(t_uint256,t_struct(Ticket)6007_storage)": {
+            "label": "mapping(uint256 => struct StandardLotteryV2.Ticket)"
+          },
+          "t_struct(Ticket)6007_storage": {
+            "label": "struct StandardLotteryV2.Ticket",
+            "members": [
+              {
+                "label": "number",
+                "type": "t_uint256"
+              },
+              {
+                "label": "owner",
+                "type": "t_address"
+              }
+            ]
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)"
+          },
+          "t_mapping(t_uint256,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(uint256 => mapping(uint256 => uint256))"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_array(t_uint256)dyn_storage))": {
+            "label": "mapping(address => mapping(uint256 => uint256[]))"
+          },
+          "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)": {
+            "label": "mapping(uint256 => uint256[])"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]"
+          },
+          "t_contract(IERC20Upgradeable)938": {
+            "label": "contract IERC20Upgradeable"
+          },
+          "t_contract(IDeHubRand)8287": {
+            "label": "contract IDeHubRand"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          },
+          "t_bool": {
+            "label": "bool"
           },
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]"
