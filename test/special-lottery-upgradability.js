@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 const { now, increaseTime, setBlockTime } = require("./utils/common");
 
-const upgradeInstance = async (admin, addressV1) => {
+const upgradeInstanceToV2 = async (admin, addressV1) => {
   const SpecialLotteryV2 = await ethers.getContractFactory(
     "SpecialLotteryV2",
     admin
@@ -15,6 +15,20 @@ const upgradeInstance = async (admin, addressV1) => {
   );
   specialLotteryV2.upgradeToV2();
   return specialLotteryV2;
+};
+
+const upgradeInstanceToV3 = async (admin, addressV2) => {
+  const SpecialLotteryV3 = await ethers.getContractFactory(
+    "SpecialLotteryV3",
+    admin
+  );
+
+  const specialLotteryV3 = await upgrades.upgradeProxy(
+    addressV2,
+    SpecialLotteryV3
+  );
+  specialLotteryV3.upgradeToV3();
+  return specialLotteryV3;
 };
 
 describe("SpecialLottery-upgradability", () => {
@@ -111,6 +125,37 @@ describe("SpecialLottery-upgradability", () => {
     );
   });
 
+  it("Should upgrade to V2.", async () => {
+    // Check V1
+    expect(await this.specialLottery.version()).to.equal(1);
+
+    // Check V2
+    const specialLotteryV2 = await upgradeInstanceToV2(
+      admin.address,
+      this.specialLottery.address
+    );
+    expect(await specialLotteryV2.version()).to.equal(2);
+  });
+
+  it("Should upgrade to V3.", async () => {
+    // Check V1
+    expect(await this.specialLottery.version()).to.equal(1);
+
+    // Check V2
+    const specialLotteryV2 = await upgradeInstanceToV2(
+      admin.address,
+      this.specialLottery.address
+    );
+    expect(await specialLotteryV2.version()).to.equal(2);
+
+    // Check V3
+    const specialLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      specialLotteryV2.address
+    );
+    expect(await specialLotteryV3.version()).to.equal(3);
+  });
+
   it("user tickets must be preserved", async () => {
     const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
@@ -130,7 +175,7 @@ describe("SpecialLottery-upgradability", () => {
       );
     }
 
-    const specialLotteryV2 = await upgradeInstance(
+    const specialLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.specialLottery.address
     );
@@ -163,7 +208,7 @@ describe("SpecialLottery-upgradability", () => {
       );
     }
 
-    const specialLotteryV2 = await upgradeInstance(
+    const specialLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.specialLottery.address
     );
@@ -198,7 +243,7 @@ describe("SpecialLottery-upgradability", () => {
       1
     );
 
-    const specialLotteryV2 = await upgradeInstance(
+    const specialLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.specialLottery.address
     );
@@ -228,7 +273,7 @@ describe("SpecialLottery-upgradability", () => {
     beforeEach(async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      this.specialLotteryV2 = await upgradeInstance(
+      this.specialLotteryV2 = await upgradeInstanceToV2(
         admin.address,
         this.specialLottery.address
       );
@@ -305,7 +350,7 @@ describe("SpecialLottery-upgradability", () => {
     beforeEach(async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      this.specialLotteryV2 = await upgradeInstance(
+      this.specialLotteryV2 = await upgradeInstanceToV2(
         admin.address,
         this.specialLottery.address
       );
