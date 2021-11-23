@@ -13,12 +13,12 @@ const upgradeInstance = async (admin, addressV1) => {
     "StandardLotteryV2",
     admin
   );
-  
+
   const standardLotteryV2 = await upgrades.upgradeProxy(
     addressV1,
     StandardLotteryV2
   );
-  standardLotteryV2.upgradeToV2();
+  await standardLotteryV2.upgradeToV2();
   return standardLotteryV2;
 };
 
@@ -32,10 +32,14 @@ describe("StandardLottery-upgradability", () => {
   let lotteryStartTime, lotteryEndTime;
 
   beforeEach(async () => {
-    [admin, operator, degrand, alpha, beta, gamma, ...addrs] = await ethers.getSigners();
+    [admin, operator, degrand, alpha, beta, gamma, ...addrs] =
+      await ethers.getSigners();
 
     const DehubToken = await ethers.getContractFactory("MockERC20", admin);
-    const DehubRandom = await ethers.getContractFactory("MockDehubFixedRand", admin);
+    const DehubRandom = await ethers.getContractFactory(
+      "MockDehubFixedRand",
+      admin
+    );
     const StandardLottery = await ethers.getContractFactory(
       "StandardLottery",
       admin
@@ -45,7 +49,11 @@ describe("StandardLottery-upgradability", () => {
       admin
     );
 
-    this.dehubToken = await DehubToken.deploy("Dehub", "$Dehub", BigNumber.from("1000000000000"));
+    this.dehubToken = await DehubToken.deploy(
+      "Dehub",
+      "$Dehub",
+      BigNumber.from("1000000000000")
+    );
     await this.dehubToken.deployed();
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
@@ -68,9 +76,18 @@ describe("StandardLottery-upgradability", () => {
     );
     await this.specialLottery.deployed();
 
-    await this.dehubToken.transfer(alpha.address, BigNumber.from("100000000000"));
-    await this.dehubToken.transfer(beta.address, BigNumber.from("100000000000"));
-    await this.dehubToken.transfer(gamma.address, BigNumber.from("100000000000"));
+    await this.dehubToken.transfer(
+      alpha.address,
+      BigNumber.from("100000000000")
+    );
+    await this.dehubToken.transfer(
+      beta.address,
+      BigNumber.from("100000000000")
+    );
+    await this.dehubToken.transfer(
+      gamma.address,
+      BigNumber.from("100000000000")
+    );
 
     /// Initialize Lottery
     // Set operator address
@@ -115,7 +132,10 @@ describe("StandardLottery-upgradability", () => {
       alphaTickets
     );
 
-    const standardLotteryV2 = await upgradeInstance(admin.address, this.standardLottery.address);
+    const standardLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.standardLottery.address
+    );
 
     // Get ticket ids
     const userInfo = await standardLotteryV2
@@ -128,9 +148,8 @@ describe("StandardLottery-upgradability", () => {
     });
 
     expect(
-      (await this.dehubToken.balanceOf(standardLotteryV2.address)) -
-        initBalance
-    ).to.equal(DEHUB_PRICE * alphaTickets.length / 2); // 50%
+      (await this.dehubToken.balanceOf(standardLotteryV2.address)) - initBalance
+    ).to.equal((DEHUB_PRICE * alphaTickets.length) / 2); // 50%
   });
 
   it("prize pot must be preserved", async () => {
@@ -154,18 +173,20 @@ describe("StandardLottery-upgradability", () => {
     const totalTransferAmount = DEHUB_PRICE * alphaTickets.length;
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(admin.address, this.standardLottery.address);
+    const standardLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.standardLottery.address
+    );
 
     /// Check balance
     expect(
-      (await this.dehubToken.balanceOf(standardLotteryV2.address)) -
-        initBalance
+      (await this.dehubToken.balanceOf(standardLotteryV2.address)) - initBalance
     ).to.equal(totalTransferAmount / 2); // 50%
 
     const beforeIncreasePot = await this.dehubToken.balanceOf(
       standardLotteryV2.address
     );
-    
+
     /// Increase pot by previous contract instance
     await this.dehubToken.approve(standardLotteryV2.address, 3000);
     await standardLotteryV2.increasePot(lotteryId, 3000);
@@ -180,9 +201,7 @@ describe("StandardLottery-upgradability", () => {
     const lotteryId = await this.standardLottery.viewCurrentTaskId();
 
     /// Buy ticket
-    const alphaTickets = [
-      102070406, 115030803, 101140803, 106150208
-    ];
+    const alphaTickets = [102070406, 115030803, 101140803, 106150208];
     await this.dehubToken
       .connect(alpha)
       .approve(this.standardLottery.address, DEHUB_PRICE * alphaTickets.length);
@@ -192,7 +211,7 @@ describe("StandardLottery-upgradability", () => {
       alphaTickets
     );
 
-    const deLottoAmount = DEHUB_PRICE * alphaTickets.length / 2; // 50%	Towards	DeLotto	pot
+    const deLottoAmount = (DEHUB_PRICE * alphaTickets.length) / 2; // 50%	Towards	DeLotto	pot
 
     /// Close Lottery
     await setBlockTime(lotteryEndTime);
@@ -202,8 +221,9 @@ describe("StandardLottery-upgradability", () => {
     // Let us make a silver prize for third ticket.
     const randomResult = 102130702; // considering _wrappingFinalNumber()
     await this.dehubRandom.setRandomResult(randomResult);
-    expect(await this.dehubRandom
-      .viewRandomResult256(this.standardLottery.address)).to.equal(randomResult);
+    expect(
+      await this.dehubRandom.viewRandomResult256(this.standardLottery.address)
+    ).to.equal(randomResult);
 
     /// Draw lottery
     await this.standardLottery.connect(operator).drawFinalNumber(lotteryId);
@@ -216,14 +236,20 @@ describe("StandardLottery-upgradability", () => {
     // Check rewards of triple matched number
     const ticketId3 = userInfo[0][2]; // third ticket id
     const bracket3 = 2;
-    const rewards3 = await this.standardLottery
-      .viewRewardsForTicketId(lotteryId, ticketId3, bracket3);
-    expect(rewards3).to.equal(deLottoAmount * 2500 / 10000); // silver percent
+    const rewards3 = await this.standardLottery.viewRewardsForTicketId(
+      lotteryId,
+      ticketId3,
+      bracket3
+    );
+    expect(rewards3).to.equal((deLottoAmount * 2500) / 10000); // silver percent
 
     const initBalance = await this.dehubToken.balanceOf(alpha.address);
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(admin.address, this.standardLottery.address);
+    const standardLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.standardLottery.address
+    );
 
     /// Claim tickets
     const bracketIds = [0, 0, 2, 0];
@@ -233,7 +259,7 @@ describe("StandardLottery-upgradability", () => {
 
     expect(
       (await this.dehubToken.balanceOf(alpha.address)) - initBalance
-    ).to.equal(deLottoAmount * 2500 / 10000);
+    ).to.equal((deLottoAmount * 2500) / 10000);
 
     // Check if there are not claimable tickets
     const userInfoAfterClaim = await standardLotteryV2
@@ -248,9 +274,7 @@ describe("StandardLottery-upgradability", () => {
     const lotteryId = await this.standardLottery.viewCurrentTaskId();
 
     /// Buy ticket
-    const alphaTickets = [
-      102070406, 115030803, 101140803, 106140803
-    ];
+    const alphaTickets = [102070406, 115030803, 101140803, 106140803];
     await this.dehubToken
       .connect(alpha)
       .approve(this.standardLottery.address, DEHUB_PRICE * alphaTickets.length);
@@ -260,7 +284,7 @@ describe("StandardLottery-upgradability", () => {
       alphaTickets
     );
 
-    const deLottoAmount = DEHUB_PRICE * alphaTickets.length / 2; // 50%	Towards	DeLotto	pot
+    const deLottoAmount = (DEHUB_PRICE * alphaTickets.length) / 2; // 50%	Towards	DeLotto	pot
 
     /// Close Lottery
     await setBlockTime(lotteryEndTime);
@@ -270,11 +294,15 @@ describe("StandardLottery-upgradability", () => {
     // Let us make a silver prize for third ticket.
     const randomResult = 105130702; // considering _wrappingFinalNumber()
     await this.dehubRandom.setRandomResult(randomResult);
-    expect(await this.dehubRandom
-      .viewRandomResult256(this.standardLottery.address)).to.equal(randomResult);
+    expect(
+      await this.dehubRandom.viewRandomResult256(this.standardLottery.address)
+    ).to.equal(randomResult);
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(admin.address, this.standardLottery.address);
+    const standardLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.standardLottery.address
+    );
 
     /// Draw lottery
     await this.standardLottery.connect(operator).drawFinalNumber(lotteryId);
@@ -288,8 +316,11 @@ describe("StandardLottery-upgradability", () => {
     // Check rewards of double matched number
     const ticketId4 = userInfo[0][3]; // forth ticket id
     const bracket4 = 3;
-    const rewards4 = await this.standardLottery
-      .viewRewardsForTicketId(lotteryId, ticketId4, bracket4);
+    const rewards4 = await this.standardLottery.viewRewardsForTicketId(
+      lotteryId,
+      ticketId4,
+      bracket4
+    );
     expect(rewards4).to.equal(deLottoAmount); // gold percent
 
     const initBalance = await this.dehubToken.balanceOf(alpha.address);
@@ -315,18 +346,17 @@ describe("StandardLottery-upgradability", () => {
 
   it("success working after upgrading", async () => {
     const lotteryId = await this.standardLottery.viewCurrentTaskId();
-    
-    const deGrandInitBalance = await this.dehubToken.balanceOf(
-      degrand.address
-    );
+
+    const deGrandInitBalance = await this.dehubToken.balanceOf(degrand.address);
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(admin.address, this.standardLottery.address);
+    const standardLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.standardLottery.address
+    );
 
     /// Buy ticket
-    const alphaTickets = [
-      102070406, 115030803, 101140803, 106140803
-    ];
+    const alphaTickets = [102070406, 115030803, 101140803, 106140803];
     await this.dehubToken
       .connect(alpha)
       .approve(standardLotteryV2.address, DEHUB_PRICE * alphaTickets.length);
@@ -336,12 +366,11 @@ describe("StandardLottery-upgradability", () => {
       alphaTickets
     );
 
-    const deGrandAmount = DEHUB_PRICE * alphaTickets.length * 3 / 10; // 30%	Towards	DeGrand	pot
+    const deGrandAmount = (DEHUB_PRICE * alphaTickets.length * 3) / 10; // 30%	Towards	DeGrand	pot
 
     /// Check DeGrand wallet amount
     expect(
-      (await this.dehubToken.balanceOf(degrand.address)) -
-        deGrandInitBalance
+      (await this.dehubToken.balanceOf(degrand.address)) - deGrandInitBalance
     ).to.equal(deGrandAmount); // 30%
   });
 });
