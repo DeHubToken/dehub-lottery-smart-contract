@@ -8,7 +8,7 @@ const {
   generateTicketNumbers,
 } = require("./utils/common");
 
-const upgradeInstance = async (admin, addressV1) => {
+const upgradeInstanceToV2 = async (admin, addressV1) => {
   const StandardLotteryV2 = await ethers.getContractFactory(
     "StandardLotteryV2",
     admin
@@ -18,8 +18,28 @@ const upgradeInstance = async (admin, addressV1) => {
     addressV1,
     StandardLotteryV2
   );
+
+  await standardLotteryV2.deployed();
+  // Run mandatory (non-atomic) update sequence.
   await standardLotteryV2.upgradeToV2();
   return standardLotteryV2;
+};
+
+const upgradeInstanceToV3 = async (admin, addressV2) => {
+  const StandardLotteryV3 = await ethers.getContractFactory(
+    "StandardLotteryV3",
+    admin
+  );
+
+  const standardLotteryV3 = await upgrades.upgradeProxy(
+    addressV2,
+    StandardLotteryV3
+  );
+
+  await standardLotteryV3.deployed();
+  // Run mandatory (non-atomic) update sequence.
+  await standardLotteryV3.upgradeToV3();
+  return standardLotteryV3;
 };
 
 describe("StandardLottery-upgradability", () => {
@@ -55,8 +75,10 @@ describe("StandardLottery-upgradability", () => {
       BigNumber.from("1000000000000")
     );
     await this.dehubToken.deployed();
+
     this.dehubRandom = await DehubRandom.deploy();
     await this.dehubRandom.deployed();
+
     this.standardLottery = await upgrades.deployProxy(
       StandardLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -66,6 +88,7 @@ describe("StandardLottery-upgradability", () => {
       }
     );
     await this.standardLottery.deployed();
+
     this.specialLottery = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -114,6 +137,37 @@ describe("StandardLottery-upgradability", () => {
     );
   });
 
+  it("Should upgrade to V2.", async () => {
+    // Check V1
+    expect(await this.standardLottery.version()).to.equal(1);
+
+    // Check V2
+    const standardLotteryV2 = await upgradeInstanceToV2(
+      admin.address,
+      this.standardLottery.address
+    );
+    expect(await standardLotteryV2.version()).to.equal(2);
+  });
+
+  it("Should upgrade to V3.", async () => {
+    // Check V1
+    expect(await this.standardLottery.version()).to.equal(1);
+
+    // Check V2
+    const standardLotteryV2 = await upgradeInstanceToV2(
+      admin.address,
+      this.standardLottery.address
+    );
+    expect(await standardLotteryV2.version()).to.equal(2);
+
+    // Check V3
+    const standardLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      standardLotteryV2.address
+    );
+    expect(await standardLotteryV3.version()).to.equal(3);
+  });
+
   it("user tickets must be preserved", async () => {
     const lotteryId = await this.standardLottery.viewCurrentTaskId();
 
@@ -132,7 +186,7 @@ describe("StandardLottery-upgradability", () => {
       alphaTickets
     );
 
-    const standardLotteryV2 = await upgradeInstance(
+    const standardLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.standardLottery.address
     );
@@ -173,7 +227,7 @@ describe("StandardLottery-upgradability", () => {
     const totalTransferAmount = DEHUB_PRICE * alphaTickets.length;
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(
+    const standardLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.standardLottery.address
     );
@@ -246,7 +300,7 @@ describe("StandardLottery-upgradability", () => {
     const initBalance = await this.dehubToken.balanceOf(alpha.address);
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(
+    const standardLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.standardLottery.address
     );
@@ -299,7 +353,7 @@ describe("StandardLottery-upgradability", () => {
     ).to.equal(randomResult);
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(
+    const standardLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.standardLottery.address
     );
@@ -350,7 +404,7 @@ describe("StandardLottery-upgradability", () => {
     const deGrandInitBalance = await this.dehubToken.balanceOf(degrand.address);
 
     /// Upgrade contract
-    const standardLotteryV2 = await upgradeInstance(
+    const standardLotteryV2 = await upgradeInstanceToV2(
       admin.address,
       this.standardLottery.address
     );
