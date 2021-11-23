@@ -18,7 +18,8 @@ describe("StandardLottery", () => {
   let lotteryStartTime, lotteryEndTime;
 
   beforeEach(async () => {
-    [admin, operator, degrand, alpha, beta, gamma, ...addrs] = await ethers.getSigners();
+    [admin, operator, degrand, alpha, beta, gamma, ...addrs] =
+      await ethers.getSigners();
 
     const DehubToken = await ethers.getContractFactory("MockERC20", admin);
     const DehubRandom = await ethers.getContractFactory("MockDehubRand", admin);
@@ -56,7 +57,7 @@ describe("StandardLottery", () => {
       this.standardLotteryV1.address,
       StandardLotteryV2
     );
-    this.standardLottery.upgradeToV2();
+    await this.standardLottery.upgradeToV2();
     this.specialLottery = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -134,9 +135,7 @@ describe("StandardLottery", () => {
     const deLottoInitBalance = await this.dehubToken.balanceOf(
       this.standardLottery.address
     );
-    const deGrandInitBalance = await this.dehubToken.balanceOf(
-      degrand.address
-    );
+    const deGrandInitBalance = await this.dehubToken.balanceOf(degrand.address);
     const operatorInitBalance = await this.dehubToken.balanceOf(
       operator.address
     );
@@ -196,8 +195,7 @@ describe("StandardLottery", () => {
         deLottoInitBalance
     ).to.equal(totalTransferAmount / 2); // 50%
     expect(
-      (await this.dehubToken.balanceOf(degrand.address)) -
-        deGrandInitBalance
+      (await this.dehubToken.balanceOf(degrand.address)) - deGrandInitBalance
     ).to.equal((totalTransferAmount * 3) / 10); // 30%
     expect(
       (await this.dehubToken.balanceOf(operator.address)) - operatorInitBalance

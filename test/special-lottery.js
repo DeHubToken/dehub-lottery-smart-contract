@@ -51,7 +51,7 @@ describe("SpecialLottery", () => {
       this.standardLotteryV1.address,
       StandardLotteryV2
     );
-    this.standardLottery.upgradeToV2();
+    await this.standardLottery.upgradeToV2();
     this.specialLottery = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -250,7 +250,7 @@ describe("SpecialLottery", () => {
     it("pick degrand stage", async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      const timestamp = await now() + 600;
+      const timestamp = (await now()) + 600;
       await this.specialLottery.setDeGrandPrize(
         timestamp,
         "iPhone 13", // title

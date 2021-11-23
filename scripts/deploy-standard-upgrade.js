@@ -40,6 +40,7 @@ async function main() {
   console.log("Network:", network.name);
 
   if (network.name === "testnet" || network.name === "mainnet") {
+    // Deploy standard contract
     const standardLotteryV1 =
       network.name === "testnet"
         ? manifestInTestnet.proxies[0].address
@@ -94,7 +95,7 @@ async function main() {
       {
         Label: "StandardLottery",
         Info: standardUpgrades.address,
-      },
+      }
     ]);
   }
 }
