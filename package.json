@@ -6,8 +6,10 @@
     "compile": "npx hardhat compile --force",
     "deploy:testnet": "npx hardhat run scripts/deploy.js --network testnet",
     "deploy:mainnet": "npx hardhat run scripts/deploy.js --network mainnet",
-    "upgrade:testnet": "npx hardhat run scripts/deploy-upgrade.js --network testnet",
-    "upgrade:mainnet": "npx hardhat run scripts/deploy-upgrade.js --network mainnet",
+    "upgrade-standard:testnet": "npx hardhat run scripts/deploy-standard-upgrade.js --network testnet",
+    "upgrade-standard:mainnet": "npx hardhat run scripts/deploy-standard-upgrade.js --network mainnet",
+    "upgrade-special:testnet": "npx hardhat run scripts/deploy-special-upgrade.js --network testnet",
+    "upgrade-special:mainnet": "npx hardhat run scripts/deploy-special-upgrade.js --network mainnet",
     "fork:testnet": "npx hardhat node --fork $(dotenv -p MORALIS_BSC_TESTNET_ARCHIVE_URL) --fork-block-number 12585457",
     "fork:mainnet": "npx hardhat node --fork $(dotenv -p MORALIS_BSC_MAINNET_ARCHIVE_URL) --fork-block-number 11134446"
   },
