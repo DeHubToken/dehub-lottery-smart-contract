@@ -46,7 +46,7 @@ async function main() {
         ? manifestInTestnet.proxies[1].address
         : manifestInMainnet.proxies[1].address;
 
-    console.log('specialLotteryV1', specialLotteryV1);
+    console.log("specialLotteryV1", specialLotteryV1);
 
     // We get the contract to deploy
     const SpecialLotteryV2 = await ethers.getContractFactory(
@@ -97,7 +97,7 @@ async function main() {
       {
         Label: "SpecialLottery",
         Info: specialUpgrades.address,
-      }
+      },
     ]);
   }
 }
