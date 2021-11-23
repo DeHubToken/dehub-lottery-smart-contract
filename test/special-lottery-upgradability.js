@@ -8,7 +8,7 @@ const upgradeInstance = async (admin, addressV1) => {
     "SpecialLotteryV2",
     admin
   );
-  
+
   const specialLotteryV2 = await upgrades.upgradeProxy(
     addressV1,
     SpecialLotteryV2
@@ -65,7 +65,7 @@ describe("SpecialLottery-upgradability", () => {
       this.standardLotteryV1.address,
       StandardLotteryV2
     );
-    this.standardLottery.upgradeToV2();
+    await this.standardLottery.upgradeToV2();
     this.specialLottery = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
@@ -118,7 +118,9 @@ describe("SpecialLottery-upgradability", () => {
 
     /// Buy tickets
     for (let idx = 0; idx < addrs.length; idx++) {
-      alphaInitBalance.push(await this.dehubToken.balanceOf(addrs[idx].address));
+      alphaInitBalance.push(
+        await this.dehubToken.balanceOf(addrs[idx].address)
+      );
       await this.dehubToken
         .connect(addrs[idx])
         .approve(this.specialLottery.address, DEHUB_PRICE * 50);
@@ -128,14 +130,18 @@ describe("SpecialLottery-upgradability", () => {
       );
     }
 
-    const specialLotteryV2 = await upgradeInstance(admin.address, this.specialLottery.address);
+    const specialLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.specialLottery.address
+    );
 
     /// Check buyer's token amount
     for (let idx = 0; idx < addrs.length; idx++) {
       expect(
-        alphaInitBalance[idx] - (await this.dehubToken.balanceOf(addrs[idx].address))
+        alphaInitBalance[idx] -
+          (await this.dehubToken.balanceOf(addrs[idx].address))
       ).to.equal(DEHUB_PRICE * 50);
-        // Get ticket ids
+      // Get ticket ids
       const userInfo = await specialLotteryV2
         .connect(addrs[idx])
         .viewUserInfoForLotteryId(addrs[idx].address, lotteryId, 0, 100);
@@ -157,13 +163,16 @@ describe("SpecialLottery-upgradability", () => {
       );
     }
 
-    const specialLotteryV2 = await upgradeInstance(admin.address, this.specialLottery.address);
+    const specialLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.specialLottery.address
+    );
 
     /// Check balance
     const beforeIncreasePot = await this.dehubToken.balanceOf(
       specialLotteryV2.address
     );
-    
+
     /// Increase pot by previous contract instance
     await this.dehubToken.approve(specialLotteryV2.address, 3000);
     await specialLotteryV2.increasePot(lotteryId, 3000);
@@ -177,7 +186,7 @@ describe("SpecialLottery-upgradability", () => {
   it("degrand prize must be preserved", async () => {
     const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-    const nowTime = await now() + 1000;
+    const nowTime = (await now()) + 1000;
 
     await this.specialLottery.setDeGrandPrize(
       nowTime,
@@ -189,7 +198,10 @@ describe("SpecialLottery-upgradability", () => {
       1
     );
 
-    const specialLotteryV2 = await upgradeInstance(admin.address, this.specialLottery.address);
+    const specialLotteryV2 = await upgradeInstance(
+      admin.address,
+      this.specialLottery.address
+    );
 
     const {
       drawTime,
@@ -199,7 +211,7 @@ describe("SpecialLottery-upgradability", () => {
       ctaUrl,
       imageUrl,
       maxWinnerCount,
-      picked
+      picked,
     } = await specialLotteryV2.viewDeGrandPrizeByLotteryId(lotteryId);
 
     expect(drawTime).to.equal(nowTime);
@@ -216,7 +228,10 @@ describe("SpecialLottery-upgradability", () => {
     beforeEach(async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      this.specialLotteryV2 = await upgradeInstance(admin.address, this.specialLottery.address);
+      this.specialLotteryV2 = await upgradeInstance(
+        admin.address,
+        this.specialLottery.address
+      );
 
       /// Buy tickets
       for (let idx = 0; idx < addrs.length; idx++) {
@@ -237,7 +252,7 @@ describe("SpecialLottery-upgradability", () => {
     it("only 1 maximum winners should be picked", async () => {
       const lotteryId = await this.specialLotteryV2.viewCurrentTaskId();
 
-      const nowTime = await now() + 1000;
+      const nowTime = (await now()) + 1000;
 
       await this.specialLotteryV2.setDeGrandPrize(
         nowTime,
@@ -251,7 +266,8 @@ describe("SpecialLottery-upgradability", () => {
 
       await this.specialLotteryV2.pickDeGrandWinners(lotteryId);
 
-      const deGrandStatus = await this.specialLotteryV2.viewDeGrandStatusForTicketIds(lotteryId);
+      const deGrandStatus =
+        await this.specialLotteryV2.viewDeGrandStatusForTicketIds(lotteryId);
       expect(deGrandStatus[0].length).to.equal(1); // number of winner address
       expect(deGrandStatus[1].length).to.equal(1); // number of winning tickets
     });
@@ -259,7 +275,7 @@ describe("SpecialLottery-upgradability", () => {
     it("more than 1 maximum winners should be picked", async () => {
       const lotteryId = await this.specialLotteryV2.viewCurrentTaskId();
 
-      const nowTime = await now() + 1000;
+      const nowTime = (await now()) + 1000;
 
       await this.specialLotteryV2.setDeGrandPrize(
         nowTime,
@@ -273,10 +289,11 @@ describe("SpecialLottery-upgradability", () => {
 
       await this.specialLotteryV2.pickDeGrandWinners(lotteryId);
 
-      const deGrandStatus = await this.specialLotteryV2.viewDeGrandStatusForTicketIds(lotteryId);
-      console.log('deGrandStatusd', deGrandStatus);
+      const deGrandStatus =
+        await this.specialLotteryV2.viewDeGrandStatusForTicketIds(lotteryId);
+      console.log("deGrandStatusd", deGrandStatus);
       for (let idx = 0; idx < addrs.length; idx++) {
-        console.log('addrs[idx]', addrs[idx].address);
+        console.log("addrs[idx]", addrs[idx].address);
       }
 
       expect(deGrandStatus[0].length).to.equal(10); // number of winner address
@@ -288,7 +305,10 @@ describe("SpecialLottery-upgradability", () => {
     beforeEach(async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      this.specialLotteryV2 = await upgradeInstance(admin.address, this.specialLottery.address);
+      this.specialLotteryV2 = await upgradeInstance(
+        admin.address,
+        this.specialLottery.address
+      );
 
       /// Buy tickets
       for (let idx = 0; idx < addrs.length; idx++) {
@@ -306,7 +326,7 @@ describe("SpecialLottery-upgradability", () => {
       await this.specialLotteryV2.connect(operator).closeLottery(lotteryId);
     });
 
-    it("maximum winning ticket is 100, more than 50", async() => {
+    it("maximum winning ticket is 100, more than 50", async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
       await this.specialLotteryV2.connect(operator).pickAwardWinners(lotteryId);
@@ -318,16 +338,17 @@ describe("SpecialLottery-upgradability", () => {
         const userInfo = await this.specialLotteryV2
           .connect(addrs[idx])
           .viewUserInfoForLotteryId(addrs[idx].address, lotteryId, 0, 100);
-        const winningStatus = await this.specialLotteryV2.viewDeLottoWinningForTicketIds(
-          lotteryId,
-          userInfo[0] // ticket ids
-        );
+        const winningStatus =
+          await this.specialLotteryV2.viewDeLottoWinningForTicketIds(
+            lotteryId,
+            userInfo[0] // ticket ids
+          );
         for (let idx2 = 0; idx2 < winningStatus.length; idx2++) {
           totalWinnings += winningStatus[idx2] ? 1 : 0;
         }
       }
 
-      console.log('totalWinnings', totalWinnings);
+      console.log("totalWinnings", totalWinnings);
       expect(totalWinnings).to.greaterThanOrEqual(50);
       expect(totalWinnings).to.lessThanOrEqual(100);
     });
