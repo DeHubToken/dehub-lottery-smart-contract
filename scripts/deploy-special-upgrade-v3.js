@@ -57,7 +57,7 @@ async function main() {
       SpecialLotteryV3
     );
     await specialUpgrades.deployed();
-    await specialUpgrades.upgradeToV2();
+    await specialUpgrades.upgradeToV3();
 
     await countTotalGas(specialUpgrades);
     console.log("Deployed SpecialLotteryV3 contracts", { totalGas });
