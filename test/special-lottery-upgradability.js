@@ -421,4 +421,73 @@ describe("SpecialLottery-upgradability", () => {
       expect(totalWinnings).to.lessThanOrEqual(100);
     });
   });
+
+  it("change ticket rate", async () => {
+    const lotteryId = await this.specialLottery.viewCurrentTaskId();
+
+    const specialLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      this.specialLottery.address
+    );
+
+    const newPrice = 2000 * 100000;
+    await specialLotteryV3.changeTicketRate(newPrice);
+
+    const { ticketRate } = await specialLotteryV3.viewLottery(lotteryId);
+    expect(ticketRate).to.equal(newPrice);
+  });
+
+  it("decrease ticket rate", async () => {
+    const lotteryId = await this.specialLottery.viewCurrentTaskId();
+
+    const specialLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      this.specialLottery.address
+    );
+
+    const initBalance = await this.dehubToken.balanceOf(addrs[0].address);
+
+    const newPrice = 500 * 100000;
+    await specialLotteryV3.changeTicketRate(newPrice);
+
+    await this.dehubToken
+      .connect(addrs[0])
+      .approve(specialLotteryV3.address, newPrice * 50);
+
+    await specialLotteryV3.connect(addrs[0]).buyTickets(
+      lotteryId,
+      50 // purchased ticket count
+    );
+
+    expect(
+      initBalance - (await this.dehubToken.balanceOf(addrs[0].address))
+    ).to.equal(newPrice * 50);
+
+    // Get ticket ids
+    const userInfo = await specialLotteryV3
+      .connect(addrs[0])
+      .viewUserInfoForLotteryId(addrs[0].address, lotteryId, 0, 100);
+    expect(userInfo[0].length).to.equal(50);
+  });
+
+  // it("increase ticket rate", async () => {
+  //   const lotteryId = await this.specialLottery.viewCurrentTaskId();
+
+  //   const specialLotteryV3 = await upgradeInstanceToV3(
+  //     admin.address,
+  //     this.specialLottery.address
+  //   );
+
+  //   const newPrice = 2000 * 100000;
+  //   await specialLotteryV3.changeTicketRate(newPrice);
+
+  //   await this.dehubToken
+  //     .connect(addrs[0])
+  //     .approve(this.specialLotteryV3.address, DEHUB_PRICE * 50);
+
+  //   await expect(this.specialLotteryV3.connect(addrs[idx]).buyTickets(
+  //     lotteryId,
+  //     50 // purchased ticket count
+  //   ).to.be.reverted();
+  // });
 });

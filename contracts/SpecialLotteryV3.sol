@@ -920,7 +920,7 @@ contract SpecialLotteryV3 is DeHubLotterysAbstract {
       "Lottery not open"
     );
     require(
-      _lotteries[currentLotteryId].ticketRate == _newRate,
+      _lotteries[currentLotteryId].ticketRate != _newRate,
       "New rate must not be same"
     );
 
