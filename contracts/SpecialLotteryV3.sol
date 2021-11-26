@@ -916,12 +916,12 @@ contract SpecialLotteryV3 is DeHubLotterysAbstract {
   function changeTicketRate(uint256 _newRate) external onlyOwner {
     require(
       currentLotteryId > 0 &&
-      _lotteries[currentLotteryId].deLottoStatus == Status.Open,
+        _lotteries[currentLotteryId].deLottoStatus == Status.Open,
       "Lottery not open"
     );
     require(
       _lotteries[currentLotteryId].ticketRate == _newRate,
-      "Require the different price"
+      "New rate must not be same"
     );
 
     uint256 oldRate = _lotteries[currentLotteryId].ticketRate;
