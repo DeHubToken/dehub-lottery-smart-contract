@@ -95,7 +95,7 @@ async function main() {
       {
         Label: "StandardLottery",
         Info: standardUpgrades.address,
-      }
+      },
     ]);
   }
 }
