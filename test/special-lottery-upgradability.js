@@ -31,6 +31,20 @@ const upgradeInstanceToV3 = async (admin, addressV2) => {
   return specialLotteryV3;
 };
 
+const upgradeInstanceToV4 = async (admin, addressV3) => {
+  const SpecialLotteryV4 = await ethers.getContractFactory(
+    "SpecialLotteryV4",
+    admin
+  );
+
+  const specialLotteryV4 = await upgrades.upgradeProxy(
+    addressV3,
+    SpecialLotteryV4
+  );
+  specialLotteryV4.upgradeToV4();
+  return specialLotteryV4;
+};
+
 describe("SpecialLottery-upgradability", () => {
   const DEHUB_PRICE = 1000 * 100000;
   const SIX_HOUR = 3600 * 6;
@@ -57,6 +71,10 @@ describe("SpecialLottery-upgradability", () => {
       "SpecialLottery",
       admin
     );
+    const SpecialLotteryV2 = await ethers.getContractFactory(
+      "SpecialLotteryV2",
+      admin
+    );
 
     this.dehubToken = await DehubToken.deploy(
       "Dehub",
@@ -80,7 +98,7 @@ describe("SpecialLottery-upgradability", () => {
       StandardLotteryV2
     );
     await this.standardLottery.upgradeToV2();
-    this.specialLottery = await upgrades.deployProxy(
+    this.specialLotteryV1 = await upgrades.deployProxy(
       SpecialLottery,
       [this.dehubToken.address, this.dehubRandom.address],
       {
@@ -88,7 +106,12 @@ describe("SpecialLottery-upgradability", () => {
         initializer: "__SpecialLottery_init",
       }
     );
-    await this.specialLottery.deployed();
+    await this.specialLotteryV1.deployed();
+    this.specialLottery = await upgrades.upgradeProxy(
+      this.specialLotteryV1.address,
+      SpecialLotteryV2
+    );
+    await this.specialLottery.upgradeToV2();
 
     for (let idx = 0; idx < addrs.length; idx++) {
       await this.dehubToken.transfer(
@@ -125,35 +148,35 @@ describe("SpecialLottery-upgradability", () => {
     );
   });
 
-  it("Should upgrade to V2.", async () => {
-    // Check V1
-    expect(await this.specialLottery.version()).to.equal(1);
-
-    // Check V2
-    const specialLotteryV2 = await upgradeInstanceToV2(
-      admin.address,
-      this.specialLottery.address
-    );
-    expect(await specialLotteryV2.version()).to.equal(2);
-  });
-
   it("Should upgrade to V3.", async () => {
-    // Check V1
-    expect(await this.specialLottery.version()).to.equal(1);
-
     // Check V2
-    const specialLotteryV2 = await upgradeInstanceToV2(
-      admin.address,
-      this.specialLottery.address
-    );
-    expect(await specialLotteryV2.version()).to.equal(2);
+    expect(await this.specialLottery.version()).to.equal(2);
 
     // Check V3
     const specialLotteryV3 = await upgradeInstanceToV3(
       admin.address,
-      specialLotteryV2.address
+      this.specialLottery.address
     );
     expect(await specialLotteryV3.version()).to.equal(3);
+  });
+
+  it("Should upgrade to V4.", async () => {
+    // Check V2
+    expect(await this.specialLottery.version()).to.equal(2);
+
+    // Check V3
+    const specialLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      this.specialLottery.address
+    );
+    expect(await specialLotteryV3.version()).to.equal(3);
+
+    // Check V4
+    const specialLotteryV4 = await upgradeInstanceToV4(
+      admin.address,
+      specialLotteryV3.address
+    );
+    expect(await specialLotteryV4.version()).to.equal(4);
   });
 
   it("user tickets must be preserved", async () => {
@@ -175,7 +198,7 @@ describe("SpecialLottery-upgradability", () => {
       );
     }
 
-    const specialLotteryV2 = await upgradeInstanceToV2(
+    const specialLotteryV3 = await upgradeInstanceToV3(
       admin.address,
       this.specialLottery.address
     );
@@ -187,7 +210,7 @@ describe("SpecialLottery-upgradability", () => {
           (await this.dehubToken.balanceOf(addrs[idx].address))
       ).to.equal(DEHUB_PRICE * 50);
       // Get ticket ids
-      const userInfo = await specialLotteryV2
+      const userInfo = await specialLotteryV3
         .connect(addrs[idx])
         .viewUserInfoForLotteryId(addrs[idx].address, lotteryId, 0, 100);
       expect(userInfo[0].length).to.equal(50);
@@ -208,22 +231,22 @@ describe("SpecialLottery-upgradability", () => {
       );
     }
 
-    const specialLotteryV2 = await upgradeInstanceToV2(
+    const specialLotteryV3 = await upgradeInstanceToV3(
       admin.address,
       this.specialLottery.address
     );
 
     /// Check balance
     const beforeIncreasePot = await this.dehubToken.balanceOf(
-      specialLotteryV2.address
+      specialLotteryV3.address
     );
 
     /// Increase pot by previous contract instance
-    await this.dehubToken.approve(specialLotteryV2.address, 3000);
-    await specialLotteryV2.increasePot(lotteryId, 3000);
+    await this.dehubToken.approve(specialLotteryV3.address, 3000);
+    await specialLotteryV3.increasePot(lotteryId, 3000);
 
     expect(
-      (await this.dehubToken.balanceOf(specialLotteryV2.address)) -
+      (await this.dehubToken.balanceOf(specialLotteryV3.address)) -
         beforeIncreasePot
     ).to.equal(3000);
   });
@@ -243,7 +266,7 @@ describe("SpecialLottery-upgradability", () => {
       1
     );
 
-    const specialLotteryV2 = await upgradeInstanceToV2(
+    const specialLotteryV3 = await upgradeInstanceToV3(
       admin.address,
       this.specialLottery.address
     );
@@ -257,7 +280,7 @@ describe("SpecialLottery-upgradability", () => {
       imageUrl,
       maxWinnerCount,
       picked,
-    } = await specialLotteryV2.viewDeGrandPrizeByLotteryId(lotteryId);
+    } = await specialLotteryV3.viewDeGrandPrizeByLotteryId(lotteryId);
 
     expect(drawTime).to.equal(nowTime);
     expect(title).to.equal("title");
@@ -273,7 +296,7 @@ describe("SpecialLottery-upgradability", () => {
     beforeEach(async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      this.specialLotteryV2 = await upgradeInstanceToV2(
+      this.specialLotteryV3 = await upgradeInstanceToV3(
         admin.address,
         this.specialLottery.address
       );
@@ -282,8 +305,8 @@ describe("SpecialLottery-upgradability", () => {
       for (let idx = 0; idx < addrs.length; idx++) {
         await this.dehubToken
           .connect(addrs[idx])
-          .approve(this.specialLotteryV2.address, DEHUB_PRICE * 50);
-        await this.specialLotteryV2.connect(addrs[idx]).buyTickets(
+          .approve(this.specialLotteryV3.address, DEHUB_PRICE * 50);
+        await this.specialLotteryV3.connect(addrs[idx]).buyTickets(
           lotteryId,
           50 // purchased ticket count
         );
@@ -291,15 +314,15 @@ describe("SpecialLottery-upgradability", () => {
 
       /// Close Lottery
       await setBlockTime(lotteryEndTime);
-      await this.specialLotteryV2.connect(operator).closeLottery(lotteryId);
+      await this.specialLotteryV3.connect(operator).closeLottery(lotteryId);
     });
 
     it("only 1 maximum winners should be picked", async () => {
-      const lotteryId = await this.specialLotteryV2.viewCurrentTaskId();
+      const lotteryId = await this.specialLotteryV3.viewCurrentTaskId();
 
       const nowTime = (await now()) + 1000;
 
-      await this.specialLotteryV2.setDeGrandPrize(
+      await this.specialLotteryV3.setDeGrandPrize(
         nowTime,
         "title",
         "subtitle",
@@ -309,20 +332,20 @@ describe("SpecialLottery-upgradability", () => {
         1
       );
 
-      await this.specialLotteryV2.pickDeGrandWinners(lotteryId);
+      await this.specialLotteryV3.pickDeGrandWinners(lotteryId);
 
       const deGrandStatus =
-        await this.specialLotteryV2.viewDeGrandStatusForTicketIds(lotteryId);
+        await this.specialLotteryV3.viewDeGrandStatusForTicketIds(lotteryId);
       expect(deGrandStatus[0].length).to.equal(1); // number of winner address
       expect(deGrandStatus[1].length).to.equal(1); // number of winning tickets
     });
 
     it("more than 1 maximum winners should be picked", async () => {
-      const lotteryId = await this.specialLotteryV2.viewCurrentTaskId();
+      const lotteryId = await this.specialLotteryV3.viewCurrentTaskId();
 
       const nowTime = (await now()) + 1000;
 
-      await this.specialLotteryV2.setDeGrandPrize(
+      await this.specialLotteryV3.setDeGrandPrize(
         nowTime,
         "title",
         "subtitle",
@@ -332,10 +355,10 @@ describe("SpecialLottery-upgradability", () => {
         10
       );
 
-      await this.specialLotteryV2.pickDeGrandWinners(lotteryId);
+      await this.specialLotteryV3.pickDeGrandWinners(lotteryId);
 
       const deGrandStatus =
-        await this.specialLotteryV2.viewDeGrandStatusForTicketIds(lotteryId);
+        await this.specialLotteryV3.viewDeGrandStatusForTicketIds(lotteryId);
       console.log("deGrandStatusd", deGrandStatus);
       for (let idx = 0; idx < addrs.length; idx++) {
         console.log("addrs[idx]", addrs[idx].address);
@@ -350,7 +373,7 @@ describe("SpecialLottery-upgradability", () => {
     beforeEach(async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      this.specialLotteryV2 = await upgradeInstanceToV2(
+      this.specialLotteryV3 = await upgradeInstanceToV3(
         admin.address,
         this.specialLottery.address
       );
@@ -359,8 +382,8 @@ describe("SpecialLottery-upgradability", () => {
       for (let idx = 0; idx < addrs.length; idx++) {
         await this.dehubToken
           .connect(addrs[idx])
-          .approve(this.specialLotteryV2.address, DEHUB_PRICE * 100);
-        await this.specialLotteryV2.connect(addrs[idx]).buyTickets(
+          .approve(this.specialLotteryV3.address, DEHUB_PRICE * 100);
+        await this.specialLotteryV3.connect(addrs[idx]).buyTickets(
           lotteryId,
           50 // purchased ticket count
         );
@@ -368,23 +391,23 @@ describe("SpecialLottery-upgradability", () => {
 
       /// Close Lottery
       await setBlockTime(lotteryEndTime);
-      await this.specialLotteryV2.connect(operator).closeLottery(lotteryId);
+      await this.specialLotteryV3.connect(operator).closeLottery(lotteryId);
     });
 
     it("maximum winning ticket is 100, more than 50", async () => {
       const lotteryId = await this.specialLottery.viewCurrentTaskId();
 
-      await this.specialLotteryV2.connect(operator).pickAwardWinners(lotteryId);
+      await this.specialLotteryV3.connect(operator).pickAwardWinners(lotteryId);
 
       let totalWinnings = 0;
 
       // Checking winning tickets
       for (let idx = 0; idx < addrs.length; idx++) {
-        const userInfo = await this.specialLotteryV2
+        const userInfo = await this.specialLotteryV3
           .connect(addrs[idx])
           .viewUserInfoForLotteryId(addrs[idx].address, lotteryId, 0, 100);
         const winningStatus =
-          await this.specialLotteryV2.viewDeLottoWinningForTicketIds(
+          await this.specialLotteryV3.viewDeLottoWinningForTicketIds(
             lotteryId,
             userInfo[0] // ticket ids
           );
@@ -398,4 +421,73 @@ describe("SpecialLottery-upgradability", () => {
       expect(totalWinnings).to.lessThanOrEqual(100);
     });
   });
+
+  it("change ticket rate", async () => {
+    const lotteryId = await this.specialLottery.viewCurrentTaskId();
+
+    const specialLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      this.specialLottery.address
+    );
+
+    const newPrice = 2000 * 100000;
+    await specialLotteryV3.changeTicketRate(newPrice);
+
+    const { ticketRate } = await specialLotteryV3.viewLottery(lotteryId);
+    expect(ticketRate).to.equal(newPrice);
+  });
+
+  it("decrease ticket rate", async () => {
+    const lotteryId = await this.specialLottery.viewCurrentTaskId();
+
+    const specialLotteryV3 = await upgradeInstanceToV3(
+      admin.address,
+      this.specialLottery.address
+    );
+
+    const initBalance = await this.dehubToken.balanceOf(addrs[0].address);
+
+    const newPrice = 500 * 100000;
+    await specialLotteryV3.changeTicketRate(newPrice);
+
+    await this.dehubToken
+      .connect(addrs[0])
+      .approve(specialLotteryV3.address, newPrice * 50);
+
+    await specialLotteryV3.connect(addrs[0]).buyTickets(
+      lotteryId,
+      50 // purchased ticket count
+    );
+
+    expect(
+      initBalance - (await this.dehubToken.balanceOf(addrs[0].address))
+    ).to.equal(newPrice * 50);
+
+    // Get ticket ids
+    const userInfo = await specialLotteryV3
+      .connect(addrs[0])
+      .viewUserInfoForLotteryId(addrs[0].address, lotteryId, 0, 100);
+    expect(userInfo[0].length).to.equal(50);
+  });
+
+  // it("increase ticket rate", async () => {
+  //   const lotteryId = await this.specialLottery.viewCurrentTaskId();
+
+  //   const specialLotteryV3 = await upgradeInstanceToV3(
+  //     admin.address,
+  //     this.specialLottery.address
+  //   );
+
+  //   const newPrice = 2000 * 100000;
+  //   await specialLotteryV3.changeTicketRate(newPrice);
+
+  //   await this.dehubToken
+  //     .connect(addrs[0])
+  //     .approve(this.specialLotteryV3.address, DEHUB_PRICE * 50);
+
+  //   await expect(this.specialLotteryV3.connect(addrs[idx]).buyTickets(
+  //     lotteryId,
+  //     50 // purchased ticket count
+  //   ).to.be.reverted();
+  // });
 });

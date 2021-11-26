@@ -40,37 +40,39 @@ async function main() {
   console.log("Network:", network.name);
 
   if (network.name === "testnet" || network.name === "mainnet") {
-    // Deploy standard contract
-    const standardLotteryV1 =
+    // Deploy special contract
+    const specialLotteryV2 =
       network.name === "testnet"
-        ? manifestInTestnet.proxies[0].address
-        : manifestInMainnet.proxies[0].address;
+        ? manifestInTestnet.proxies[1].address
+        : manifestInMainnet.proxies[1].address;
+
+    console.log("specialLotteryV2", specialLotteryV2);
 
     // We get the contract to deploy
-    const StandardLotteryV2 = await ethers.getContractFactory(
-      "StandardLotteryV2"
+    const SpecialLotteryV3 = await ethers.getContractFactory(
+      "SpecialLotteryV3"
     );
-    const standardUpgrades = await upgrades.upgradeProxy(
-      standardLotteryV1,
-      StandardLotteryV2
+    const specialUpgrades = await upgrades.upgradeProxy(
+      specialLotteryV2,
+      SpecialLotteryV3
     );
-    await standardUpgrades.deployed();
-    await standardUpgrades.upgradeToV2();
+    await specialUpgrades.deployed();
+    await specialUpgrades.upgradeToV3();
 
-    await countTotalGas(standardUpgrades);
-    console.log("Deployed StandardLotteryV2 contracts", { totalGas });
-    console.log("StandardLottery deployed to:", standardUpgrades.address);
+    await countTotalGas(specialUpgrades);
+    console.log("Deployed SpecialLotteryV3 contracts", { totalGas });
+    console.log("SpecialLottery deployed to:", specialUpgrades.address);
 
     console.log(">>>>>>>>>>>> Verification >>>>>>>>>>>>");
 
     try {
       // Verify
-      const standardImpl = await upgrades.erc1967.getImplementationAddress(
-        standardUpgrades.address
+      const specialImpl = await upgrades.erc1967.getImplementationAddress(
+        specialUpgrades.address
       );
-      console.log("Verifying standard address: ", standardImpl);
+      console.log("Verifying special address: ", specialImpl);
       await run("verify:verify", {
-        address: standardImpl,
+        address: specialImpl,
       });
     } catch (error) {
       if (error instanceof NomicLabsHardhatPluginError) {
@@ -93,8 +95,8 @@ async function main() {
         Info: ethers.utils.formatEther(await deployer.getBalance()),
       },
       {
-        Label: "StandardLottery",
-        Info: standardUpgrades.address,
+        Label: "SpecialLottery",
+        Info: specialUpgrades.address,
       },
     ]);
   }
